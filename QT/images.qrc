@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>Images/Icons/pause-button.png</file>
+        <file>Images/Icons/play-button.png</file>
+        <file>Images/Icons/settings.png</file>
+        <file>Images/Icons/horizontal-lines.png</file>
+        <file>Images/Icons/magnet.png</file>
+    </qresource>
+    <qresource prefix="/intro"/>
+</RCC>
