@@ -1,5 +1,5 @@
 ﻿#include "ISupervisor.h"
-#include "Drivers/AutoLogger.h"
+#include "Drivers/autologger.h"
 #include "mainwindow.h"
 
 #include "random"

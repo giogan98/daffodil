@@ -1,7 +1,7 @@
 ﻿#ifndef SERIALCONTROLLER_H
 #define SERIALCONTROLLER_H
 
-#include "AutoLogger.h"
+#include "autologger.h"
 #include "ISettings.h"
 
 #include <QElapsedTimer>

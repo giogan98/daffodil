@@ -17,7 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     Drivers/ISettings.cpp \
-    Drivers/AutoLogger.cpp \
+    Drivers/autologger.cpp \
     Drivers/serialcontroller.cpp \
     FilesProcessing/commandfileprocessor.cpp \
     ISupervisor.cpp \
@@ -27,7 +27,7 @@ SOURCES += \
 
 HEADERS += \
     Drivers/ISettings.h \
-    Drivers/AutoLogger.h \
+    Drivers/autologger.h \
     Drivers/serialcontroller.h \
     FilesProcessing/commandfileprocessor.h \
     ISupervisor.h \
