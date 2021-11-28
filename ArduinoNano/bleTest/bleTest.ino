@@ -1,18 +1,19 @@
 #include <ArduinoBLE.h>
 #include <Arduino_LSM9DS1.h>
 
-#define BLE_UUID_SENSOR_DATA_SERVICE          "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
+#define BLE_UUID_GYROSCOPE_DATA_SERVICE       "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
+#define BLE_UUID_ACCELEROMETER_DATA_SERVICE   "20fc700f-fd70-4da6-90e3-1ca9ca60f956"
 #define BLE_UUID_GYROSCOPE_CHARACTERISTIC     "9936153d-65bc-4479-b079-aa25569f9ab1"
 #define BLE_UUID_ACCELEROMETER_CHARACTERISTIC "f4055745-6f5a-4e2b-8433-2704337cc3b5"
-#define BLE_UUID_SERVICE_RESERVE              "20fc700f-fd70-4da6-90e3-1ca9ca60f956"
 
-BLEService sensorDataService(BLE_UUID_SENSOR_DATA_SERVICE);
+BLEService gyroscopeDataService(BLE_UUID_GYROSCOPE_DATA_SERVICE);
+BLEService accelerometerDataService(BLE_UUID_ACCELEROMETER_DATA_SERVICE);
+
 BLEFloatCharacteristic gyroscopeValuesCharacteristic(BLE_UUID_GYROSCOPE_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic accelerometerValuesCharacteristic(BLE_UUID_ACCELEROMETER_CHARACTERISTIC, BLERead | BLENotify);
-BLEService reserveServicee(BLE_UUID_SERVICE_RESERVE);
 
-const unsigned long ulInterval = 2000;
 unsigned long ulPreviousTime = 0;
+const unsigned long ulInterval = 2000;
 
 //------------------------------------------------------------------------------
 void initializeSerial(const unsigned int &iBaudRate)
@@ -41,13 +42,17 @@ void initializeIMU(void)
 //------------------------------------------------------------------------------
 void setupBLE(void)
 {
-  BLE.setLocalName("Sense");
-  BLE.setAdvertisedService(sensorDataService);                           
-  sensorDataService.addCharacteristic(gyroscopeValuesCharacteristic);
-  BLE.setAdvertisedService(reserveServicee);  
-  reserveServicee.addCharacteristic(accelerometerValuesCharacteristic);
-  BLE.addService(sensorDataService);
-  BLE.addService(reserveServicee);    
+  BLE.setLocalName("SenseBLE");
+  
+  BLE.setAdvertisedService(gyroscopeDataService);                           
+  gyroscopeDataService.addCharacteristic(gyroscopeValuesCharacteristic);
+  
+  BLE.setAdvertisedService(accelerometerDataService);  
+  accelerometerDataService.addCharacteristic(accelerometerValuesCharacteristic);
+  
+  BLE.addService(gyroscopeDataService);
+  BLE.addService(accelerometerDataService);
+     
   BLE.advertise();
 }
 //------------------------------------------------------------------------------
@@ -83,6 +88,7 @@ void getGyroscopeValues(void)
   if (IMU.gyroscopeAvailable()) 
   {
     IMU.readGyroscope(x, y, z);
+    Serial.print("Gyro data:\n\t");
     Serial.print(x);
     Serial.print('\t');
     Serial.print(y);
@@ -101,6 +107,7 @@ void getAccelerometerValues(void)
   if (IMU.accelerationAvailable()) 
   {
     IMU.readAcceleration(x, y, z);
+    Serial.print("Accelerometer data:\n\t");
     Serial.print(x);
     Serial.print('\t');
     Serial.print(y);
@@ -118,6 +125,7 @@ void loop(void)
   if (ulTimer > (ulPreviousTime + ulInterval))
   {
     ulPreviousTime = ulTimer;
+    getSensorValues();
   }
 }
 //------------------------------------------------------------------------------
