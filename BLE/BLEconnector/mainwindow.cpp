@@ -87,7 +87,6 @@ void MainWindow::scanFinished(void)
             ui->cb_devices->addItem(element.name());
         }
     }
-    ui->cb_devices->addItem("A");
 }
 //------------------------------------------------------------------------------
 void MainWindow::on_pbn_search_clicked()
