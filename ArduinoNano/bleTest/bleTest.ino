@@ -1,71 +1,131 @@
 #include <ArduinoBLE.h>
 #include <Arduino_LSM9DS1.h>
 
-BLEService gyroService("5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"); //Declare service for Gyroscope
-BLEFloatCharacteristic gyroscopeValuesChar("2101", BLERead | BLENotify);
+#define BLE_UUID_GYROSCOPE_DATA_SERVICE       "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
+#define BLE_UUID_ACCELEROMETER_DATA_SERVICE   "20fc700f-fd70-4da6-90e3-1ca9ca60f956"
+#define BLE_UUID_GYROSCOPE_CHARACTERISTIC     "9936153d-65bc-4479-b079-aa25569f9ab1"
+#define BLE_UUID_ACCELEROMETER_CHARACTERISTIC "f4055745-6f5a-4e2b-8433-2704337cc3b5"
 
-const unsigned long culInterval = 2000;
+BLEService gyroscopeDataService(BLE_UUID_GYROSCOPE_DATA_SERVICE);
+BLEService accelerometerDataService(BLE_UUID_ACCELEROMETER_DATA_SERVICE);
+
+BLEFloatCharacteristic gyroscopeValuesCharacteristic(BLE_UUID_GYROSCOPE_CHARACTERISTIC, BLERead | BLENotify);
+BLEFloatCharacteristic accelerometerValuesCharacteristic(BLE_UUID_ACCELEROMETER_CHARACTERISTIC, BLERead | BLENotify);
+
 unsigned long ulPreviousTime = 0;
+const unsigned long ulInterval = 2000;
 
-void setup()
+//------------------------------------------------------------------------------
+void initializeSerial(const unsigned int &iBaudRate)
 {
-
-  Serial.begin(9600); //BAUD rate fixed at 9600 Hz
-  while (!Serial);    //Wait until serial connection is estabilished
-  pinMode(LED_BUILTIN, OUTPUT); //Intializes the built in LED to indicate when a central device has connected
-  
-  if (!BLE.begin()) //Wait for BLE initialization
+  Serial.begin(iBaudRate);
+  while (!Serial);
+}
+//------------------------------------------------------------------------------
+void initializeBLE(void)
+{
+  if (!BLE.begin())
   {
     Serial.println("BLE failed");
     while (1);
   }
-  
-  if (!IMU.begin()) //Wait for IMU initialization
+}
+//------------------------------------------------------------------------------
+void initializeIMU(void)
+{
+  if (!IMU.begin())
   {
     Serial.println("Failed initializing IMU");
     while (1);
   }
+}
+//------------------------------------------------------------------------------
+void setupBLE(void)
+{
+  BLE.setLocalName("SenseBLE");
   
-  BLE.setLocalName("Gyroscope");                       
-  BLE.setAdvertisedService(gyroService);                       
-  gyroService.addCharacteristic(gyroscopeValuesChar);   //Adds the gryoscope characteristics 
-  BLE.addService(gyroService);                          //Adds the gyroscope service 
-    
-  BLE.advertise();                                      //Starts advertising the peripheral device over bluetooth
+  BLE.setAdvertisedService(gyroscopeDataService);                           
+  gyroscopeDataService.addCharacteristic(gyroscopeValuesCharacteristic);
+  
+  BLE.setAdvertisedService(accelerometerDataService);  
+  accelerometerDataService.addCharacteristic(accelerometerValuesCharacteristic);
+  
+  BLE.addService(gyroscopeDataService);
+  BLE.addService(accelerometerDataService);
+     
+  BLE.advertise();
+}
+//------------------------------------------------------------------------------
+void setup(void)
+{
+  initializeSerial(9600);
+  initializeBLE();
+  initializeIMU();
+  setupBLE();
+  pinMode(LED_BUILTIN, OUTPUT);
   Serial.println("Waiting for connection..");
 }
-
-void loop() 
+//------------------------------------------------------------------------------
+bool getSensorValues(void)
 {
-  BLEDevice central = BLE.central();                    //Waits for BLE Central device to connect
-  unsigned long ulTimer = millis();
+  BLEDevice central = BLE.central();
+
   if (central)                                          
   {
-    Serial.print("Connected to central: ");
-    Serial.println(central.address());
-    digitalWrite(LED_BUILTIN, HIGH);                    //Turn on peripheral LED to indicate valid connection with Central Device
-
-    while (central.connected()) {                       //While the Peripheral Device is connected to the Central Device
-      float x,y,z;                                      //Declare variables to hold gyroscope values 
-      if(IMU.gyroscopeAvailable()) {                    //If the gyroscope sensor is available, read the values into variables.
-        IMU.readGyroscope(x,y,z);
-         Serial.print(x);
-         Serial.print('\t');
-         Serial.print(y);
-         Serial.print('\t');
-         Serial.println(z);
-      }
-      gyroscopeValuesChar.writeValue(x);  
-      delay(1000);
-
-    }
-  }
-  else
-  {
-    if (ulTimer > (ulPreviousTime + culInterval))
+    while (central.connected()) 
     {
-      ulPreviousTime = ulTimer;
-      Serial.println("Disconnected from central");
+      getGyroscopeValues();
+      getAccelerometerValues();
+      delay(1000);                  
     }
+  }  
+}
+//------------------------------------------------------------------------------
+void getGyroscopeValues(void)
+{
+  float x, y, z;
+
+  if (IMU.gyroscopeAvailable()) 
+  {
+    IMU.readGyroscope(x, y, z);
+    Serial.print("Gyro data:\n\t");
+    Serial.print(x);
+    Serial.print('\t');
+    Serial.print(y);
+    Serial.print('\t');
+    Serial.println(z);
+    gyroscopeValuesCharacteristic.writeValue(x);
+    gyroscopeValuesCharacteristic.writeValue(y);
+    gyroscopeValuesCharacteristic.writeValue(z);
+  } 
+}
+//------------------------------------------------------------------------------
+void getAccelerometerValues(void)
+{
+  float x, y, z;
+  
+  if (IMU.accelerationAvailable()) 
+  {
+    IMU.readAcceleration(x, y, z);
+    Serial.print("Accelerometer data:\n\t");
+    Serial.print(x);
+    Serial.print('\t');
+    Serial.print(y);
+    Serial.print('\t');
+    Serial.println(z);
+    accelerometerValuesCharacteristic.writeValue(x);
+    accelerometerValuesCharacteristic.writeValue(y);
+    accelerometerValuesCharacteristic.writeValue(z);
   }
 }
+//------------------------------------------------------------------------------
+void loop(void) 
+{
+  unsigned long ulTimer = millis();
+  if (ulTimer > (ulPreviousTime + ulInterval))
+  {
+    ulPreviousTime = ulTimer;
+    getSensorValues();
+  }
+}
+//------------------------------------------------------------------------------
