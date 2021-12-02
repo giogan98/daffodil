@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QtBluetooth>
+#include <QPlainTextEdit>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,11 +18,14 @@ public:
 private:
     Ui::MainWindow *ui;
     QBluetoothDeviceDiscoveryAgent *ptr_deviceDiscoveryAgent = nullptr;
-    QList<QObject*> m_devices;
+    QLowEnergyService *ptr_dataService = nullptr;
     QList<QBluetoothDeviceInfo> list_devicesInfos;
     QString m_error;
     QString m_info;
     QLowEnergyController *ptr_leController = nullptr;
+    bool bFoundDataService;
+    QLowEnergyDescriptor leGyroNotificationDesc;
+    QLowEnergyDescriptor leAccNotificationDesc;
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -31,12 +35,19 @@ public:
 
 private:
     void initializeBluetoothDeviceDiscoveryAgent(void);
-    QBluetoothDeviceInfo getDevice(const int &iIndex);
+    QBluetoothDeviceInfo getDeviceFromCBox(const int &iIndex);
     void setDevice(const QBluetoothDeviceInfo &device);
+    void connectServicePointer(QLowEnergyService *ptr_service);
+    void addDataToPlainTextEdit(QPlainTextEdit *pte, const QString &data);
 
 public slots:
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);
     void scanFinished(void);
+    void serviceDiscovered(const QBluetoothUuid &gatt);
+    void serviceScanDone(void);
+    void serviceStateChanged(QLowEnergyService::ServiceState s);
+    void updateGyroscopeData(const QLowEnergyCharacteristic &c, const QByteArray &value);
+    void updateAccelerometerData(const QLowEnergyCharacteristic &c, const QByteArray &value);
 
 signals:
     void scanningChanged(); //Device Finder Class
