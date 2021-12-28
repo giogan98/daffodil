@@ -39,6 +39,7 @@ private:
     void setDevice(const QBluetoothDeviceInfo &device);
     void connectServicePointer(QLowEnergyService *ptr_service);
     void addDataToPlainTextEdit(QPlainTextEdit *pte, const QString &data);
+    float QByteArrayToFloat(const QByteArray &qba);
 
 public slots:
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);

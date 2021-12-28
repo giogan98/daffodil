@@ -5,6 +5,7 @@
 #define BLE_UUID_GYROSCOPE_CHARACTERISTIC     "9936153d-65bc-4479-b079-aa25569f9ab1"
 #define BLE_UUID_ACCELEROMETER_CHARACTERISTIC "f4055745-6f5a-4e2b-8433-2704337cc3b5"
 
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -25,7 +26,7 @@ void MainWindow::initializeBluetoothDeviceDiscoveryAgent(void)
     ptr_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
 
     //Sets the maximum search time for BLE device search to timeout in ms:
-    ptr_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(5000);
+    ptr_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(3000);
 
     //This signal is emitted when an error occurs during Bluetooth device
     //discovery. The error parameter describes the error that occurred.
@@ -155,7 +156,7 @@ void MainWindow::setDevice(const QBluetoothDeviceInfo &device)
 //------------------------------------------------------------------------------
 void MainWindow::serviceDiscovered(const QBluetoothUuid &gatt)
 {
-    //Search for gyroscope data service UUID
+    //Search for data service UUID
     if (gatt == QBluetoothUuid(BLE_UUID_DATA_SERVICE))
     {
         qDebug()<<"Found data service";
@@ -188,8 +189,8 @@ void MainWindow::connectServicePointer(QLowEnergyService *ptr_service)
     if (ptr_service)
     {
         connect(ptr_service, &QLowEnergyService::stateChanged, this, &MainWindow::serviceStateChanged);
-        connect(ptr_service, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateGyroscopeData);
-        connect(ptr_service, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateAccelerometerData);
+//        connect(ptr_service, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateGyroscopeData);
+//        connect(ptr_service, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateAccelerometerData);
         ptr_service->discoverDetails();
     }
     else
@@ -224,6 +225,9 @@ void MainWindow::serviceStateChanged(QLowEnergyService::ServiceState leServiceSt
 
         if (leGyroNotificationDesc.isValid() && leAccNotificationDesc.isValid())
         {
+            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateGyroscopeData);
+            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateAccelerometerData);
+            //enable notification
             ptr_dataService->writeDescriptor(leGyroNotificationDesc, QByteArray::fromHex("0100"));
             ptr_dataService->writeDescriptor(leAccNotificationDesc, QByteArray::fromHex("0100"));
         }
@@ -239,16 +243,14 @@ void MainWindow::updateGyroscopeData(const QLowEnergyCharacteristic &c, const QB
 {
     if (c.uuid() != QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC))
         return;
-
-    addDataToPlainTextEdit(ui->pte_gyro, value);
+    addDataToPlainTextEdit(ui->pte_gyro, QString::number(QByteArrayToFloat(value)));
 }
 //------------------------------------------------------------------------------
 void MainWindow::updateAccelerometerData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
     if (c.uuid() != QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC))
         return;
-
-    addDataToPlainTextEdit(ui->pte_acc, value);
+    addDataToPlainTextEdit(ui->pte_acc, QString::number(QByteArrayToFloat(value)));
 }
 //------------------------------------------------------------------------------
 void MainWindow::addDataToPlainTextEdit(QPlainTextEdit *pte, const QString &data)
@@ -257,5 +259,10 @@ void MainWindow::addDataToPlainTextEdit(QPlainTextEdit *pte, const QString &data
     {
         pte->appendPlainText(data + "\n");
     }
+}
+//------------------------------------------------------------------------------
+float MainWindow::QByteArrayToFloat(const QByteArray &qba)
+{
+    return *(reinterpret_cast<const float*>(qba.constData()));
 }
 //------------------------------------------------------------------------------
