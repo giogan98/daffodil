@@ -1,13 +1,11 @@
 #include <ArduinoBLE.h>
 #include <Arduino_LSM9DS1.h>
 
-#define BLE_UUID_GYROSCOPE_DATA_SERVICE       "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
-#define BLE_UUID_ACCELEROMETER_DATA_SERVICE   "20fc700f-fd70-4da6-90e3-1ca9ca60f956"
+#define BLE_UUID_DATA_SERVICE                 "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
 #define BLE_UUID_GYROSCOPE_CHARACTERISTIC     "9936153d-65bc-4479-b079-aa25569f9ab1"
 #define BLE_UUID_ACCELEROMETER_CHARACTERISTIC "f4055745-6f5a-4e2b-8433-2704337cc3b5"
 
-BLEService gyroscopeDataService(BLE_UUID_GYROSCOPE_DATA_SERVICE);
-BLEService accelerometerDataService(BLE_UUID_ACCELEROMETER_DATA_SERVICE);
+BLEService dataService(BLE_UUID_DATA_SERVICE);
 
 BLEFloatCharacteristic gyroscopeValuesCharacteristic(BLE_UUID_GYROSCOPE_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic accelerometerValuesCharacteristic(BLE_UUID_ACCELEROMETER_CHARACTERISTIC, BLERead | BLENotify);
@@ -44,14 +42,12 @@ void setupBLE(void)
 {
   BLE.setLocalName("SenseBLE");
   
-  BLE.setAdvertisedService(gyroscopeDataService);                           
-  gyroscopeDataService.addCharacteristic(gyroscopeValuesCharacteristic);
+  BLE.setAdvertisedService(dataService);  
+                           
+  dataService.addCharacteristic(gyroscopeValuesCharacteristic);
+  dataService.addCharacteristic(accelerometerValuesCharacteristic);
   
-  BLE.setAdvertisedService(accelerometerDataService);  
-  accelerometerDataService.addCharacteristic(accelerometerValuesCharacteristic);
-  
-  BLE.addService(gyroscopeDataService);
-  BLE.addService(accelerometerDataService);
+  BLE.addService(dataService);
      
   BLE.advertise();
 }

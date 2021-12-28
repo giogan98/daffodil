@@ -1,6 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#define BLE_UUID_DATA_SERVICE                 "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
+#define BLE_UUID_GYROSCOPE_CHARACTERISTIC     "9936153d-65bc-4479-b079-aa25569f9ab1"
+#define BLE_UUID_ACCELEROMETER_CHARACTERISTIC "f4055745-6f5a-4e2b-8433-2704337cc3b5"
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -8,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     this->setWindowTitle("BLEconnector");
     initializeBluetoothDeviceDiscoveryAgent();
+    bFoundDataService = false;
 }
 //------------------------------------------------------------------------------
 MainWindow::~MainWindow()
@@ -20,7 +26,7 @@ void MainWindow::initializeBluetoothDeviceDiscoveryAgent(void)
     ptr_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
 
     //Sets the maximum search time for BLE device search to timeout in ms:
-    ptr_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(5000);
+    ptr_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(3000);
 
     //This signal is emitted when an error occurs during Bluetooth device
     //discovery. The error parameter describes the error that occurred.
@@ -91,6 +97,7 @@ void MainWindow::scanFinished(void)
 //------------------------------------------------------------------------------
 void MainWindow::on_pbn_search_clicked()
 {
+    ui->cb_devices->clear();
     //Starts Bluetooth device discovery, if it is not already started.
     ptr_deviceDiscoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
 }
@@ -99,10 +106,10 @@ void MainWindow::on_pbn_okDevice_clicked()
 {
     //Get index of the selected item in the combobox
     int iIndex = ui->cb_devices->currentIndex();
-    setDevice(getDevice(iIndex));
+    setDevice(getDeviceFromCBox(iIndex));
 }
 //------------------------------------------------------------------------------
-QBluetoothDeviceInfo MainWindow::getDevice(const int &iIndex = 0)
+QBluetoothDeviceInfo MainWindow::getDeviceFromCBox(const int &iIndex = 0)
 {
     QBluetoothDeviceInfo bdiTemp;
     if (list_devicesInfos.length() > iIndex)
@@ -120,6 +127,142 @@ QBluetoothDeviceInfo MainWindow::getDevice(const int &iIndex = 0)
 void MainWindow::setDevice(const QBluetoothDeviceInfo &device)
 {
     ptr_leController = QLowEnergyController::createCentral(device, this);
+
+    //When a service is discovered, go to the slot "serviceDiscovered"
+    connect(ptr_leController, &QLowEnergyController::serviceDiscovered,
+            this, &MainWindow::serviceDiscovered);
+
+    //When the services discovery is finished, go to slot "serviceScanDone"
+    connect(ptr_leController, &QLowEnergyController::discoveryFinished,
+            this, &MainWindow::serviceScanDone);
+
+    connect(ptr_leController, &QLowEnergyController::errorOccurred, this,
+            [this](QLowEnergyController::Error error) {
+        Q_UNUSED(error);
+        setError("Cannot connect to remote device.");
+    });
+
+    connect(ptr_leController, &QLowEnergyController::connected, this, [this]() {
+        setInfo("Controller connected. Search services...");
+        ptr_leController->discoverServices();
+    });
+
+    connect(ptr_leController, &QLowEnergyController::disconnected, this, [this]() {
+        setError("LowEnergy controller disconnected");
+    });
+
     ptr_leController->connectToDevice();
+}
+//------------------------------------------------------------------------------
+void MainWindow::serviceDiscovered(const QBluetoothUuid &gatt)
+{
+    //Search for data service UUID
+    if (gatt == QBluetoothUuid(BLE_UUID_DATA_SERVICE))
+    {
+        qDebug()<<"Found data service";
+        bFoundDataService = true;
+        return;
+    }
+    qDebug()<<"Data service not found";
+}
+//------------------------------------------------------------------------------
+void MainWindow::serviceScanDone(void)
+{
+    setInfo("Service scan done.");
+
+    // Delete old gyro service if available
+    if (ptr_dataService)
+    {
+        delete ptr_dataService;
+        ptr_dataService = nullptr;
+    }
+
+    if (bFoundDataService)
+    {
+        ptr_dataService = ptr_leController->createServiceObject(QBluetoothUuid(BLE_UUID_DATA_SERVICE), this);
+        connectServicePointer(ptr_dataService);
+    }
+}
+//------------------------------------------------------------------------------
+void MainWindow::connectServicePointer(QLowEnergyService *ptr_service)
+{
+    if (ptr_service)
+    {
+        connect(ptr_service, &QLowEnergyService::stateChanged, this, &MainWindow::serviceStateChanged);
+//        connect(ptr_service, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateGyroscopeData);
+//        connect(ptr_service, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateAccelerometerData);
+        ptr_service->discoverDetails();
+    }
+    else
+    {
+        setError("Service not found.");
+    }
+}
+//------------------------------------------------------------------------------
+void MainWindow::serviceStateChanged(QLowEnergyService::ServiceState leServiceState)
+{
+    switch (leServiceState)
+    {
+    case QLowEnergyService::RemoteServiceDiscovering:
+        setInfo(tr("Discovering services..."));
+        break;
+
+    case QLowEnergyService::RemoteServiceDiscovered:
+    {
+        setInfo(tr("Service discovered."));
+
+        const QLowEnergyCharacteristic gyroChar = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC));
+        const QLowEnergyCharacteristic accChar = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC));
+
+        if (!gyroChar.isValid() || !accChar.isValid())
+        {
+            setError("Data not found.");
+            break;
+        }
+
+        leGyroNotificationDesc = gyroChar.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+        leAccNotificationDesc = accChar.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+
+        if (leGyroNotificationDesc.isValid() && leAccNotificationDesc.isValid())
+        {
+            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateGyroscopeData);
+            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &MainWindow::updateAccelerometerData);
+            //enable notification
+            ptr_dataService->writeDescriptor(leGyroNotificationDesc, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leAccNotificationDesc, QByteArray::fromHex("0100"));
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+//------------------------------------------------------------------------------
+void MainWindow::updateGyroscopeData(const QLowEnergyCharacteristic &c, const QByteArray &value)
+{
+    if (c.uuid() != QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC))
+        return;
+    addDataToPlainTextEdit(ui->pte_gyro, QString::number(QByteArrayToFloat(value)));
+}
+//------------------------------------------------------------------------------
+void MainWindow::updateAccelerometerData(const QLowEnergyCharacteristic &c, const QByteArray &value)
+{
+    if (c.uuid() != QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC))
+        return;
+    addDataToPlainTextEdit(ui->pte_acc, QString::number(QByteArrayToFloat(value)));
+}
+//------------------------------------------------------------------------------
+void MainWindow::addDataToPlainTextEdit(QPlainTextEdit *pte, const QString &data)
+{
+    if(pte)
+    {
+        pte->appendPlainText(data + "\n");
+    }
+}
+//------------------------------------------------------------------------------
+float MainWindow::QByteArrayToFloat(const QByteArray &qba)
+{
+    return *(reinterpret_cast<const float*>(qba.constData()));
 }
 //------------------------------------------------------------------------------
