@@ -30,7 +30,7 @@ void BLEcontroller::initializeBluetoothDeviceDiscoveryAgent(void)
     ptr_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
 
     //Sets the maximum search time for BLE device search to timeout in ms:
-    ptr_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(3000);
+    ptr_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(2000);
 
     //This signal is emitted when an error occurs during Bluetooth device
     //discovery. The error parameter describes the error that occurred.
