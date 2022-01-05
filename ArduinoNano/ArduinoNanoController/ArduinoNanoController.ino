@@ -10,16 +10,20 @@ BLEService dataService(BLE_UUID_DATA_SERVICE);
 BLEFloatCharacteristic gyroscopeValuesCharacteristic(BLE_UUID_GYROSCOPE_CHARACTERISTIC, BLERead | BLENotify);
 BLEFloatCharacteristic accelerometerValuesCharacteristic(BLE_UUID_ACCELEROMETER_CHARACTERISTIC, BLERead | BLENotify);
 
-unsigned long ulPreviousTime = 0;
-const unsigned long ulInterval = 2000;
 
 //------------------------------------------------------------------------------
+/**
+ * Initialize the serial and wait till it's connected
+ */
 void initializeSerial(const unsigned int &iBaudRate)
 {
   Serial.begin(iBaudRate);
   while (!Serial);
 }
 //------------------------------------------------------------------------------
+/**
+ * Initialize the BLE module, if initialization fails the program will be stuck here
+ */
 void initializeBLE(void)
 {
   if (!BLE.begin())
@@ -29,7 +33,10 @@ void initializeBLE(void)
   }
 }
 //------------------------------------------------------------------------------
-void initializeIMU(void)
+/**
+ * Initialize the IMU module, if initialization fails the program will be stuck here
+ */
+ void initializeIMU(void)
 {
   if (!IMU.begin())
   {
@@ -38,6 +45,10 @@ void initializeIMU(void)
   }
 }
 //------------------------------------------------------------------------------
+/**
+ * Set the local name, add the data service and the accelerometer and gyro
+ * characteristics, start the BLE advertisement
+ */
 void setupBLE(void)
 {
   BLE.setLocalName("SenseBLE");
@@ -52,16 +63,12 @@ void setupBLE(void)
   BLE.advertise();
 }
 //------------------------------------------------------------------------------
-void setup(void)
-{
-  initializeSerial(9600);
-  initializeBLE();
-  initializeIMU();
-  setupBLE();
-  pinMode(LED_BUILTIN, OUTPUT);
-  Serial.println("Waiting for connection..");
-}
-//------------------------------------------------------------------------------
+/**
+ * Check if the central is connected. If so, gets the data from the accelerometer
+ * and the gyroscope
+ * Until the central is disconnected, the program will loop in this function and
+ * continue to retrieve and send the sensors data
+ */
 bool getSensorValues(void)
 {
   BLEDevice central = BLE.central();
@@ -72,11 +79,14 @@ bool getSensorValues(void)
     {
       getGyroscopeValues();
       getAccelerometerValues();
-      delay(1000);                  
+      delay(3000);                  
     }
   }  
 }
 //------------------------------------------------------------------------------
+/**
+ * If gyroscope is avaiable, get values from it, print them and send them via BLE
+ */
 void getGyroscopeValues(void)
 {
   float x, y, z;
@@ -84,18 +94,21 @@ void getGyroscopeValues(void)
   if (IMU.gyroscopeAvailable()) 
   {
     IMU.readGyroscope(x, y, z);
+    gyroscopeValuesCharacteristic.writeValue(x);
+    gyroscopeValuesCharacteristic.writeValue(y);
+    gyroscopeValuesCharacteristic.writeValue(z);
     Serial.print("Gyro data:\n\t");
     Serial.print(x);
     Serial.print('\t');
     Serial.print(y);
     Serial.print('\t');
     Serial.println(z);
-    gyroscopeValuesCharacteristic.writeValue(x);
-    gyroscopeValuesCharacteristic.writeValue(y);
-    gyroscopeValuesCharacteristic.writeValue(z);
   } 
 }
 //------------------------------------------------------------------------------
+/**
+ * If accelerometer is avaiable, get values from it, print them and send them via BLE
+ */
 void getAccelerometerValues(void)
 {
   float x, y, z;
@@ -103,25 +116,30 @@ void getAccelerometerValues(void)
   if (IMU.accelerationAvailable()) 
   {
     IMU.readAcceleration(x, y, z);
+    accelerometerValuesCharacteristic.writeValue(x);
+    accelerometerValuesCharacteristic.writeValue(y);
+    accelerometerValuesCharacteristic.writeValue(z);
     Serial.print("Accelerometer data:\n\t");
     Serial.print(x);
     Serial.print('\t');
     Serial.print(y);
     Serial.print('\t');
     Serial.println(z);
-    accelerometerValuesCharacteristic.writeValue(x);
-    accelerometerValuesCharacteristic.writeValue(y);
-    accelerometerValuesCharacteristic.writeValue(z);
   }
+}
+//------------------------------------------------------------------------------
+void setup(void)
+{
+  initializeSerial(9600);
+  initializeBLE();
+  initializeIMU();
+  setupBLE();
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.println("Waiting for connection..");
 }
 //------------------------------------------------------------------------------
 void loop(void) 
 {
-  unsigned long ulTimer = millis();
-  if (ulTimer > (ulPreviousTime + ulInterval))
-  {
-    ulPreviousTime = ulTimer;
-    getSensorValues();
-  }
+  getSensorValues();
 }
 //------------------------------------------------------------------------------
