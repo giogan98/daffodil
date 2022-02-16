@@ -11,8 +11,8 @@ class BLEcontroller : public QObject
 public:
     QString m_error;
     QString m_info;
-    float fAcc;
-    float fGyro;
+    QVector<float> vfAccelerometer;
+    QVector<float> vfGyroscope;
 
 private:
     bool bFoundDataService;
@@ -20,8 +20,12 @@ private:
     QBluetoothDeviceDiscoveryAgent *ptr_deviceDiscoveryAgent = nullptr;
     QLowEnergyService *ptr_dataService = nullptr;
     QList<QBluetoothDeviceInfo> list_devicesInfos;
-    QLowEnergyDescriptor leGyroNotificationDesc;
-    QLowEnergyDescriptor leAccNotificationDesc;
+    QLowEnergyDescriptor leAccNotificationDescX;
+    QLowEnergyDescriptor leAccNotificationDescY;
+    QLowEnergyDescriptor leAccNotificationDescZ;
+    QLowEnergyDescriptor leGyroNotificationDescX;
+    QLowEnergyDescriptor leGyroNotificationDescY;
+    QLowEnergyDescriptor leGyroNotificationDescZ;
 
 public:
     BLEcontroller();
@@ -42,8 +46,7 @@ public slots:
     void serviceDiscovered(const QBluetoothUuid &gatt);
     void serviceScanDone(void);
     void serviceStateChanged(QLowEnergyService::ServiceState s);
-    void updateGyroscopeData(const QLowEnergyCharacteristic &c, const QByteArray &value);
-    void updateAccelerometerData(const QLowEnergyCharacteristic &c, const QByteArray &value);
+    void updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value);
 
 signals:
     void errorChanged();

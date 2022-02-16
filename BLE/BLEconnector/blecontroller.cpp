@@ -1,9 +1,14 @@
 #include "blecontroller.h"
 
-#define BLE_UUID_DATA_SERVICE                 "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
-#define BLE_UUID_GYROSCOPE_CHARACTERISTIC     "9936153d-65bc-4479-b079-aa25569f9ab1"
-#define BLE_UUID_ACCELEROMETER_CHARACTERISTIC "f4055745-6f5a-4e2b-8433-2704337cc3b5"
+#define BLE_UUID_DATA_SERVICE                   "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
 
+#define BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X "f4055745-6f5a-4e2b-8433-2704337cc3b5"
+#define BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Y "ac7a390c-abb3-48c8-8c54-73c3a6a4bc73"
+#define BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Z "3c71aaec-128b-4f88-bb60-28a2026498be"
+
+#define BLE_UUID_GYROSCOPE_CHARACTERISTIC_X     "9936153d-65bc-4479-b079-aa25569f9ab1"
+#define BLE_UUID_GYROSCOPE_CHARACTERISTIC_Y     "ef1cdf9d-56fd-437d-8c4e-3a77cf8c8265"
+#define BLE_UUID_GYROSCOPE_CHARACTERISTIC_Z     "69911b28-ffcc-4a65-85de-1b501f7a5e40"
 
 //------------------------------------------------------------------------------
 BLEcontroller::BLEcontroller()
@@ -12,8 +17,8 @@ BLEcontroller::BLEcontroller()
     //Need this to be initialized to false, its value will be changed if a data
     //service is found:
     bFoundDataService = false;
-    fAcc = 0;
-    fGyro = 0;
+    vfAccelerometer = QVector<float>(3, 0); //vfAccelerometer = [X, Y, Z]
+    vfGyroscope = QVector<float>(3, 0); //vfGyroscope = [X, Y, Z]
 }
 //------------------------------------------------------------------------------
 /**
@@ -121,19 +126,19 @@ void BLEcontroller::scanFinished(void)
     emit deviceListAvaiable(list_devicesInfos);
 }
 //------------------------------------------------------------------------------
- void BLEcontroller::getSelectedDevice(int iIndex)
- {
-     QBluetoothDeviceInfo bdiTemp;
-     if (list_devicesInfos.length() > iIndex)
-     {
-         bdiTemp = list_devicesInfos[iIndex];
-         setDevice(bdiTemp);
-     }
-     else
-     {
-         qDebug()<<"Error: list_devicesInfos.lenght() is inferior to cb index";
-     }
- }
+void BLEcontroller::getSelectedDevice(int iIndex)
+{
+    QBluetoothDeviceInfo bdiTemp;
+    if (list_devicesInfos.length() > iIndex)
+    {
+        bdiTemp = list_devicesInfos[iIndex];
+        setDevice(bdiTemp);
+    }
+    else
+    {
+        qDebug()<<"Error: list_devicesInfos.lenght() is inferior to cb index";
+    }
+}
 //------------------------------------------------------------------------------
 /**
  * @brief BLEcontroller::setDevice
@@ -249,25 +254,42 @@ void BLEcontroller::serviceStateChanged(QLowEnergyService::ServiceState leServic
     {
         setInfo(tr("Service discovered."));
 
-        const QLowEnergyCharacteristic gyroChar = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC));
-        const QLowEnergyCharacteristic accChar = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC));
+        const QLowEnergyCharacteristic accCharX = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X));
+        const QLowEnergyCharacteristic accCharY = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Y));
+        const QLowEnergyCharacteristic accCharZ = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Z));
 
-        if (!gyroChar.isValid() || !accChar.isValid())
+        const QLowEnergyCharacteristic gyroCharX = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_X));
+        const QLowEnergyCharacteristic gyroCharY = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Y));
+        const QLowEnergyCharacteristic gyroCharZ = ptr_dataService->characteristic(QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Z));
+
+        if (!accCharX.isValid() || !accCharY.isValid() || !accCharZ.isValid() ||
+                !gyroCharX.isValid() || !gyroCharY.isValid() || !gyroCharZ.isValid())
         {
             setError("Data not found.");
             break;
         }
 
-        leGyroNotificationDesc = gyroChar.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
-        leAccNotificationDesc = accChar.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+        leAccNotificationDescX = accCharX.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+        leAccNotificationDescY = accCharY.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+        leAccNotificationDescZ = accCharZ.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
 
-        if (leGyroNotificationDesc.isValid() && leAccNotificationDesc.isValid())
+        leGyroNotificationDescX = gyroCharX.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+        leGyroNotificationDescY = gyroCharY.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+        leGyroNotificationDescZ = gyroCharZ.descriptor(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration);
+
+        if (leAccNotificationDescX.isValid() && leAccNotificationDescY.isValid()
+                && leAccNotificationDescZ.isValid() && leGyroNotificationDescX.isValid()
+                && leGyroNotificationDescY.isValid() && leGyroNotificationDescZ.isValid())
         {
-            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &BLEcontroller::updateGyroscopeData);
-            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &BLEcontroller::updateAccelerometerData);
+            connect(ptr_dataService, &QLowEnergyService::characteristicChanged, this, &BLEcontroller::updateSensorsData);
+
             //Enable notifications:
-            ptr_dataService->writeDescriptor(leGyroNotificationDesc, QByteArray::fromHex("0100"));
-            ptr_dataService->writeDescriptor(leAccNotificationDesc, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leAccNotificationDescX, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leAccNotificationDescY, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leAccNotificationDescZ, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leGyroNotificationDescX, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leGyroNotificationDescY, QByteArray::fromHex("0100"));
+            ptr_dataService->writeDescriptor(leGyroNotificationDescZ, QByteArray::fromHex("0100"));
         }
         break;
     }
@@ -277,20 +299,41 @@ void BLEcontroller::serviceStateChanged(QLowEnergyService::ServiceState leServic
     }
 }
 //------------------------------------------------------------------------------
-void BLEcontroller::updateGyroscopeData(const QLowEnergyCharacteristic &c, const QByteArray &value)
+void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    if (c.uuid() != QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC))
-        return;
-    fGyro = QByteArrayToFloat(value);
-    emit newGyroDataAvaiable(fGyro);
-}
-//------------------------------------------------------------------------------
-void BLEcontroller::updateAccelerometerData(const QLowEnergyCharacteristic &c, const QByteArray &value)
-{
-    if (c.uuid() != QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC))
-        return;
-    fAcc = QByteArrayToFloat(value);
-    emit newAccDataAvaiable(fAcc);
+    float fValue = QByteArrayToFloat(value);
+
+    if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X))
+    {
+        vfAccelerometer[0] = fValue;
+        emit newAccDataAvaiable(fValue);
+    }
+    else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Y))
+    {
+        vfAccelerometer[1] = fValue;
+        emit newAccDataAvaiable(fValue);
+    }
+    else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Z))
+    {
+        vfAccelerometer[2] = fValue;
+        emit newAccDataAvaiable(fValue);
+    }
+    else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_X))
+    {
+        vfGyroscope[0] = fValue;
+        emit newGyroDataAvaiable(fValue);
+    }
+    else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Y))
+    {
+        vfGyroscope[1] = fValue;
+        emit newGyroDataAvaiable(fValue);
+    }
+    else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Z))
+    {
+        vfGyroscope[2] = fValue;
+        emit newGyroDataAvaiable(fValue);
+    }
+
 }
 //------------------------------------------------------------------------------
 float BLEcontroller::QByteArrayToFloat(const QByteArray &qba)
