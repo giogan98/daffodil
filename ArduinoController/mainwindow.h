@@ -22,19 +22,19 @@ public:
 private:
     bool bStart;
     bool bMessageBox;
-    Ui::MainWindow *ui            ;
-    CommandFileProcessor fileproc ;
+    Ui::MainWindow *ui;
+    CommandFileProcessor fileproc;
 
 public:
-    MainWindow(QWidget *parent = nullptr) ;
-    ~MainWindow()                         ;
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
 private slots:
-    void executestatemachine()       ;
-    void on_pbn_setUp_clicked()      ;
-    void on_pbn_connect_clicked()    ;
-    void on_pbn_openFile_clicked()   ;
-    void on_pbn_startPause_clicked() ;
+    void executestatemachine();
+    void on_pbn_setUp_clicked();
+    void on_pbn_connect_clicked();
+    void on_pbn_openFile_clicked();
+    void on_pbn_startPause_clicked();
     void on_pbn_resetCycles_clicked();
     void on_spinBox_editingFinished();
     void closeEvent(QCloseEvent *event);

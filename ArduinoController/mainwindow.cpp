@@ -206,7 +206,7 @@ void MainWindow::on_rb_noSensor_clicked()
     bool bChecked = ui->rb_noSensor->isChecked();
     if(bChecked)
     {
-        iSettings.save(ISettings::SET_CHECKSENSOR, 0);
+        iSettings.save(ISettings::SET_CHECKSENSOR, iSupervisor.SNS_NONE);
     }
     qDebug()<<iSettings.load(ISettings::SET_CHECKSENSOR);
 
@@ -217,7 +217,7 @@ void MainWindow::on_rb_pinballSensor_clicked()
     bool bChecked = ui->rb_pinballSensor->isChecked();
     if(bChecked)
     {
-        iSettings.save(ISettings::SET_CHECKSENSOR, 1);
+        iSettings.save(ISettings::SET_CHECKSENSOR, iSupervisor.SNS_PINB);
     }
     qDebug()<<iSettings.load(ISettings::SET_CHECKSENSOR);
 
@@ -228,7 +228,7 @@ void MainWindow::on_rb_BLESensor_clicked()
     bool bChecked = ui->rb_BLESensor->isChecked();
     if(bChecked)
     {
-        iSettings.save(ISettings::SET_CHECKSENSOR, 2);
+        iSettings.save(ISettings::SET_CHECKSENSOR, iSupervisor.SNS_BLE);
     }
     qDebug()<<iSettings.load(ISettings::SET_CHECKSENSOR);
 }
@@ -238,23 +238,20 @@ void MainWindow::selectCorrectRadioButtonOnStartup(void)
     int iRadioButton = iSettings.load(iSettings.SET_CHECKSENSOR).toInt();
     switch(iRadioButton)
     {
-    case 0:
+    case iSupervisor.SNS_NONE:
         ui->rb_noSensor->setChecked(true);
         ui->rb_pinballSensor->setChecked(false);
         ui->rb_BLESensor->setChecked(false);
-        qDebug()<<"Nosensor";
         break;
-    case 1:
+    case iSupervisor.SNS_PINB:
         ui->rb_noSensor->setChecked(false);
         ui->rb_pinballSensor->setChecked(true);
         ui->rb_BLESensor->setChecked(false);
-        qDebug()<<"Sensor pin";
         break;
-    case 2:
+    case iSupervisor.SNS_BLE:
         ui->rb_noSensor->setChecked(false);
         ui->rb_pinballSensor->setChecked(false);
         ui->rb_BLESensor->setChecked(true);
-        qDebug()<<"BLE";
         break;
     default:
         qDebug()<<"Error in the rb sensor to check";
