@@ -24,9 +24,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->setFixedSize(QSize(800,600));
     bStart = true;
     bMessageBox = true;
-    //Abilita il check del sensore, se non lo legge correttamente i cicli non
-    //aumentano:
-    iSettings.save(ISettings::SET_CHECKSENSOR, 1);
     //Disabilita lo stop del programma dopo N errori sensore consecutivi:
     iSettings.save(ISettings::SET_SENSOR_ERROR, false);
     fillCBComPort();
@@ -211,6 +208,8 @@ void MainWindow::on_rb_noSensor_clicked()
     {
         iSettings.save(ISettings::SET_CHECKSENSOR, 0);
     }
+    qDebug()<<iSettings.load(ISettings::SET_CHECKSENSOR);
+
 }
 //------------------------------------------------------------------------------
 void MainWindow::on_rb_pinballSensor_clicked()
@@ -220,6 +219,8 @@ void MainWindow::on_rb_pinballSensor_clicked()
     {
         iSettings.save(ISettings::SET_CHECKSENSOR, 1);
     }
+    qDebug()<<iSettings.load(ISettings::SET_CHECKSENSOR);
+
 }
 //------------------------------------------------------------------------------
 void MainWindow::on_rb_BLESensor_clicked()
@@ -229,31 +230,35 @@ void MainWindow::on_rb_BLESensor_clicked()
     {
         iSettings.save(ISettings::SET_CHECKSENSOR, 2);
     }
+    qDebug()<<iSettings.load(ISettings::SET_CHECKSENSOR);
 }
 //------------------------------------------------------------------------------
 void MainWindow::selectCorrectRadioButtonOnStartup(void)
 {
     int iRadioButton = iSettings.load(iSettings.SET_CHECKSENSOR).toInt();
-    qDebug()<<iRadioButton;
     switch(iRadioButton)
     {
     case 0:
         ui->rb_noSensor->setChecked(true);
         ui->rb_pinballSensor->setChecked(false);
         ui->rb_BLESensor->setChecked(false);
+        qDebug()<<"Nosensor";
         break;
     case 1:
         ui->rb_noSensor->setChecked(false);
         ui->rb_pinballSensor->setChecked(true);
         ui->rb_BLESensor->setChecked(false);
+        qDebug()<<"Sensor pin";
         break;
     case 2:
         ui->rb_noSensor->setChecked(false);
         ui->rb_pinballSensor->setChecked(false);
         ui->rb_BLESensor->setChecked(true);
+        qDebug()<<"BLE";
         break;
     default:
         qDebug()<<"Error in the rb sensor to check";
+        break;
     }
 }
 //------------------------------------------------------------------------------
