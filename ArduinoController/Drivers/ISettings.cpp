@@ -25,7 +25,8 @@ const ISettings::structRecordSettings ISettings::recordList[]
     {ISettings::SET_STOPBITS    ,"StopBits"   , "Grp0", QSerialPort::OneStop       },
     {ISettings::SET_FLOWCONTROL ,"FlowControl", "Grp0", QSerialPort::NoFlowControl },
     {ISettings::SET_CYCLESDONE  ,"CyclesDone" , "Grp0", int(0)                     },
-    {ISettings::SET_CHECKSENSOR ,"CheckSensor", "Grp0", bool(false)                },
+    //CHECKSENSOR: 0 NOSENSOR, 1 PINBALL, 2 BLE
+    {ISettings::SET_CHECKSENSOR ,"CheckSensor", "Grp0", int(0)                     },
     {ISettings::SET_FILEPATH    ,"StrFilePath", "Grp0", QString("C:/users/giorg/desktop/new1.txt")},
     {ISettings::SET_SENSOR_ERROR,"SensorError", "Grp0", bool(false)                },
     {ISettings::SET_SAFE_STOP   ,"SafeStop"   , "Grp0", QString("[!DO$.0]")        }

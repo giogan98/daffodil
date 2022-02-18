@@ -344,7 +344,7 @@ int ISupervisor::randomizeNumber(int iNumber)
 bool ISupervisor::checkSensor(void)
 {
     static unsigned long ulCounter = 0;
-    processSenssorOutput();
+    processSensorOutput();
     bool bCheck =  iVec_DigReads[PIN_CHECK_1-1] != PIN_CHECKER;
     if (bCheck)
     {
@@ -400,11 +400,11 @@ void ISupervisor::getRandomizedVector()
 }
 //-----------------------------------------------------------------------------
 /**
- * @brief ISupervisor::processSenssorOutput
+ * @brief ISupervisor::processSensorOutput
  * @brief process the message retrieved from the read function to check the values transmitted by
  * the sensor
  */
-void ISupervisor::processSenssorOutput(void)
+void ISupervisor::processSensorOutput(void)
 {
     //"[?DI07.1]\r\n[?DI05.1]\r\n"
     QString str_temp = QString(serialcontroller.getRequestedQba());

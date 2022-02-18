@@ -1,4 +1,4 @@
-QT       += core gui serialport
+QT       += core gui serialport bluetooth
 win32:RC_ICONS += ./Images/Icons/daffodil.ico
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     Drivers/ISettings.cpp \
     Drivers/autologger.cpp \
+    Drivers/blecontroller.cpp \
     Drivers/serialcontroller.cpp \
     FilesProcessing/commandfileprocessor.cpp \
     ISupervisor.cpp \
@@ -28,6 +29,7 @@ SOURCES += \
 HEADERS += \
     Drivers/ISettings.h \
     Drivers/autologger.h \
+    Drivers/blecontroller.h \
     Drivers/serialcontroller.h \
     FilesProcessing/commandfileprocessor.h \
     ISupervisor.h \

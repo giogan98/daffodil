@@ -14,6 +14,7 @@
 
 #define TIMER_CHRONO (20)
 #define TIME_REFRESH_GUI (180 / TIMER_CHRONO)
+
 //------------------------------------------------------------------------------
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     bMessageBox = true;
     //Abilita il check del sensore, se non lo legge correttamente i cicli non
     //aumentano:
-    iSettings.save(ISettings::SET_CHECKSENSOR, true);
+    iSettings.save(ISettings::SET_CHECKSENSOR, 1);
     //Disabilita lo stop del programma dopo N errori sensore consecutivi:
     iSettings.save(ISettings::SET_SENSOR_ERROR, false);
     fillCBComPort();
@@ -203,17 +204,57 @@ void MainWindow::closeEvent(QCloseEvent *event)
     iSupervisor.shutdownPins();
 }
 //------------------------------------------------------------------------------
-/**
- * @brief MainWindow::on_checkBox_sensor_stateChanged
- * 1) funzione è uno slot, viene chiamata quando cambia lo stato della checkbox
- *    che abilita o meno il sensore
- * 2) legge dall'UI se controllare o meno il sensore
- * 3) salva nel file .settings se il sensore è abilitato o meno
- */
-void MainWindow::on_checkBox_sensor_stateChanged()
+void MainWindow::on_rb_noSensor_clicked()
 {
-    bool bChecked = ui->checkBox_sensor->isChecked();
-    iSettings.save(ISettings::SET_CHECKSENSOR, bChecked);
+    bool bChecked = ui->rb_noSensor->isChecked();
+    if(bChecked)
+    {
+        iSettings.save(ISettings::SET_CHECKSENSOR, 0);
+    }
+}
+//------------------------------------------------------------------------------
+void MainWindow::on_rb_pinballSensor_clicked()
+{
+    bool bChecked = ui->rb_pinballSensor->isChecked();
+    if(bChecked)
+    {
+        iSettings.save(ISettings::SET_CHECKSENSOR, 1);
+    }
+}
+//------------------------------------------------------------------------------
+void MainWindow::on_rb_BLESensor_clicked()
+{
+    bool bChecked = ui->rb_BLESensor->isChecked();
+    if(bChecked)
+    {
+        iSettings.save(ISettings::SET_CHECKSENSOR, 2);
+    }
+}
+//------------------------------------------------------------------------------
+void MainWindow::selectCorrectRadioButtonOnStartup(void)
+{
+    int iRadioButton = iSettings.load(iSettings.SET_CHECKSENSOR).toInt();
+    qDebug()<<iRadioButton;
+    switch(iRadioButton)
+    {
+    case 0:
+        ui->rb_noSensor->setChecked(true);
+        ui->rb_pinballSensor->setChecked(false);
+        ui->rb_BLESensor->setChecked(false);
+        break;
+    case 1:
+        ui->rb_noSensor->setChecked(false);
+        ui->rb_pinballSensor->setChecked(true);
+        ui->rb_BLESensor->setChecked(false);
+        break;
+    case 2:
+        ui->rb_noSensor->setChecked(false);
+        ui->rb_pinballSensor->setChecked(false);
+        ui->rb_BLESensor->setChecked(true);
+        break;
+    default:
+        qDebug()<<"Error in the rb sensor to check";
+    }
 }
 //------------------------------------------------------------------------------
 /**
@@ -266,6 +307,8 @@ void MainWindow::handleGraphicInit(void)
 
     ui->groupBox_setup->hide();
     ui->label_filePath->hide();
+
+    selectCorrectRadioButtonOnStartup();
 }
 //------------------------------------------------------------------------------
 void MainWindow::on_pbn_setUp_clicked()

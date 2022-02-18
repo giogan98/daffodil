@@ -38,9 +38,11 @@ private slots:
     void on_pbn_resetCycles_clicked();
     void on_spinBox_editingFinished();
     void closeEvent(QCloseEvent *event);
-    void on_checkBox_sensor_stateChanged();
     void on_pbn_openMenu_clicked();
     void on_pbn_home_clicked();
+    void on_rb_noSensor_clicked();
+    void on_rb_pinballSensor_clicked();
+    void on_rb_BLESensor_clicked();
 
 private:
     void fillCBComPort();
@@ -48,5 +50,6 @@ private:
     void refreshTemporizedGui();
     void saveInSettingsFile(QString str_comName);
     void saveSafeStop(void);
+    void selectCorrectRadioButtonOnStartup();
 };
 #endif // MAINWINDOW_H

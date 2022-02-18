@@ -1005,6 +1005,13 @@ QToolBox::tab:selected {
            </layout>
           </item>
           <item>
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_15">
             <item>
              <spacer name="horizontalSpacer_19">
@@ -1020,14 +1027,36 @@ QToolBox::tab:selected {
              </spacer>
             </item>
             <item>
-             <widget class="QCheckBox" name="checkBox_sensor">
-              <property name="text">
-               <string>Enable Sensor Check</string>
-              </property>
-              <property name="checked">
-               <bool>true</bool>
-              </property>
-             </widget>
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <item>
+               <widget class="QLabel" name="label_sensorChoice">
+                <property name="text">
+                 <string>Sensor choice:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rb_noSensor">
+                <property name="text">
+                 <string>No Sensor</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rb_pinballSensor">
+                <property name="text">
+                 <string>Pinball Sensor</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rb_BLESensor">
+                <property name="text">
+                 <string>BLE Sensor</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
              <spacer name="horizontalSpacer_20">
@@ -1043,6 +1072,13 @@ QToolBox::tab:selected {
              </spacer>
             </item>
            </layout>
+          </item>
+          <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -1095,6 +1131,13 @@ QToolBox::tab:selected {
            </layout>
           </item>
           <item>
+           <widget class="Line" name="line_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <layout class="QHBoxLayout" name="horizontalLayout_16">
             <item>
              <spacer name="horizontalSpacer_16">
@@ -1130,6 +1173,19 @@ QToolBox::tab:selected {
              </spacer>
             </item>
            </layout>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
           </item>
          </layout>
         </widget>

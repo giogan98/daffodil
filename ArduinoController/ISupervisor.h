@@ -79,7 +79,7 @@ private:
     void dummyWrite  (void);
     bool checkSensor (void);
     void handleNewCycle(void);
-    void processSenssorOutput(void);
+    void processSensorOutput(void);
     int randomizeNumber(int iNumber);
     void log(char * u8aMsg, unsigned long lSz);
     void setSensorError(bool error);
