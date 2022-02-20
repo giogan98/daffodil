@@ -32,6 +32,15 @@ MainWindow::MainWindow(QWidget *parent)
     timerState->setTimerType(Qt::CoarseTimer);
     timerState->start(TIMER_CHRONO);
     connect(timerState,SIGNAL(timeout()),this,SLOT(executestatemachine()));
+
+    if(!iSupervisor.blecontroller)
+        return;
+    connect(this, SIGNAL(startBleDeviceSearch()), iSupervisor.blecontroller, SLOT(startDeviceScan()));
+    connect(iSupervisor.blecontroller, SIGNAL(deviceListAvaiable(QList<QBluetoothDeviceInfo>)), this, SLOT(displayBleDeviceList(QList<QBluetoothDeviceInfo>)));
+    connect(this, SIGNAL(bleDeviceSelected(int)), iSupervisor.blecontroller, SLOT(connectToSelectedDevice(int)));
+
+    //connect(iSupervisor.blecontroller, SIGNAL(newAccDataAvaiable(float)), this, SLOT(updateAccelerometerData(float)));
+    //connect(iSupervisor.blecontroller, SIGNAL(newGyroDataAvaiable(float)), this, SLOT(updateGyroscopeData(float)));
 }
 //------------------------------------------------------------------------------
 MainWindow::~MainWindow()
@@ -348,5 +357,44 @@ void MainWindow::saveSafeStop(void)
     {
         iSettings.save(ISettings::SET_SAFE_STOP, QString("[!DO$.0]"));
     }
+}
+//------------------------------------------------------------------------------
+/**
+ * @brief MainWindow::on_pb_searchBLE_clicked
+ * When the user presses the button, the search of ble devices is started
+ * Signal is emitted to start the search
+ */
+void MainWindow::on_pb_searchBLE_clicked()
+{
+    emit startBleDeviceSearch();
+}
+//------------------------------------------------------------------------------
+/**
+ * @brief MainWindow::displayBleDeviceList
+ * @param list_devicesInfos list of the ble devices found by scanning
+ * When the signal 'deviceListAvaiable' is emitted, this slot is called
+ */
+void MainWindow::displayBleDeviceList(QList<QBluetoothDeviceInfo> list_devicesInfos)
+{
+    for (const auto &element : list_devicesInfos)
+    {
+        ui->cb_BLEdevices->addItem(element.name());
+    }
+}
+//------------------------------------------------------------------------------
+/**
+ * @brief MainWindow::on_pb_connectBLE_clicked
+ * When the user select to which device the program has to connect, this emits
+ * a signal to connect to that device
+ */
+void MainWindow::on_pb_connectBLE_clicked()
+{
+    int iIndex = ui->cb_BLEdevices->currentIndex();
+    emit bleDeviceSelected(iIndex);
+}
+//------------------------------------------------------------------------------
+void MainWindow::on_pb_calibrateBLE_clicked()
+{
+
 }
 //------------------------------------------------------------------------------

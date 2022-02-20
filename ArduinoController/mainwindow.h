@@ -3,12 +3,14 @@
 
 #include "FilesProcessing/commandfileprocessor.h"
 #include "Drivers/ISettings.h"
+#include "ISupervisor.h"
 
 #include <QMainWindow>
 #include <QVector>
 #include <QFile>
 #include <QSerialPort>
 #include <QTimer>
+#include <QBluetoothDeviceInfo>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -18,7 +20,8 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
-    QTimer * timerState;
+    QTimer *timerState;
+
 private:
     bool bStart;
     bool bMessageBox;
@@ -28,6 +31,17 @@ private:
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+private:
+    void fillCBComPort();
+    void handleGraphicInit();
+    void refreshTemporizedGui();
+    void saveInSettingsFile(QString str_comName);
+    void saveSafeStop(void);
+    void selectCorrectRadioButtonOnStartup();
+
+public slots:
+    void displayBleDeviceList(QList<QBluetoothDeviceInfo> list_devicesInfos);
 
 private slots:
     void executestatemachine();
@@ -43,13 +57,12 @@ private slots:
     void on_rb_noSensor_clicked();
     void on_rb_pinballSensor_clicked();
     void on_rb_BLESensor_clicked();
+    void on_pb_searchBLE_clicked();
+    void on_pb_connectBLE_clicked();
+    void on_pb_calibrateBLE_clicked();
 
-private:
-    void fillCBComPort();
-    void handleGraphicInit();
-    void refreshTemporizedGui();
-    void saveInSettingsFile(QString str_comName);
-    void saveSafeStop(void);
-    void selectCorrectRadioButtonOnStartup();
+signals:
+    void startBleDeviceSearch(void);
+    void bleDeviceSelected(int);
 };
 #endif // MAINWINDOW_H

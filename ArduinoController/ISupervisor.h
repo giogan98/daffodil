@@ -11,6 +11,7 @@
 
 class ISupervisor
 {
+
 public:
     typedef enum
     {
@@ -34,6 +35,7 @@ public:
     QVector<int> vec_intRandomTimes;
     QVector<QByteArray> vec_qbaQueries;
     QString str_sensError;
+    BLEcontroller *blecontroller = nullptr;
 
 private:
     int iConsecutiveErrors;
@@ -73,6 +75,7 @@ public:
     QString returnMessage(void);
     void setSafetyStop(QString str_safe);
     inline enumSvStates getState(void){ return(enStatus); }
+    ~ISupervisor();
 
 private:
     ISupervisor();
@@ -93,6 +96,7 @@ private:
     int randomizeNumber(int iNumber);
     void log(char * u8aMsg, unsigned long lSz);
     void setSensorError(bool error);
+
 };
 
 extern ISupervisor iSupervisor;

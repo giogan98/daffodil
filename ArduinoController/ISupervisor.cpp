@@ -4,43 +4,50 @@
 
 #include "random"
 #include <QObject>
+#include <limits.h>
 
 #define PIN_CHECK_1 10
 #define PIN_CHECKER 1
 #define MAX_CONSEC_ERRORS 15
 
 ISupervisor iSupervisor = ISupervisor::instance();
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 ISupervisor::ISupervisor()
 {
-    iWriteDone  = 0 ;
-    iCyclesDone = 0 ;
+    iWriteDone = 0;
+    iCyclesDone = 0;
     iConsecutiveErrors = 0;
-    iCyclesToDo = 10000 ;
+    iCyclesToDo = 10000;
     str_message = "";
     iRandomInterval = 0;
     iVec_DigReads.fill(0,13);
-    init();
     str_sensError = "";
+    blecontroller = new BLEcontroller();
+    init();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+ISupervisor::~ISupervisor()
+{
+    delete blecontroller;
+}
+//------------------------------------------------------------------------------
 void ISupervisor::st_idle()
 {
-    // do nothing, wait for something to happen
+    //Do nothing, wait for something to happen
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::refreshCyclesDone()
 {
     iCyclesDone = iSettings.load(ISettings::SET_CYCLESDONE).toInt();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::st_init()
 {
     refreshCyclesDone();
     str_message = serialcontroller.openSerialPort();
     to_idle();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::st_read()
 {
     if (chronoRead.elapsed() < 1) // atm this is an useless control, previously it was 1500.0f
@@ -58,7 +65,7 @@ void ISupervisor::st_read()
         to_error();
     }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::st_write()
 {
     //     lSzScript = vec_intTime.length(); // @hint like this the program recalculate it every 40ms
@@ -67,7 +74,8 @@ void ISupervisor::st_write()
 
     handleNewCycle();
 
-    if (iCyclesDone > iCyclesToDo){
+    if (iCyclesDone > iCyclesToDo)
+    {
         to_idle();
         return;
     }
@@ -92,7 +100,7 @@ void ISupervisor::st_write()
         iCounter--;
     }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::st_error()
 {
     serialcontroller.emergencyShutdown();
@@ -100,23 +108,23 @@ void ISupervisor::st_error()
     aLog.log("[!] STATE_MACHINE_ERROR: STATE_ERROR [!]");
     to_init();
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::to_idle()
 {
     serialcontroller.emergencyShutdown();
     setState(ST_IDLE);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::to_init()
 {
     setState(ST_INIT);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::to_read()
 {
     setState(ST_READ);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::to_write()
 {
     if (serialcontroller.isOpen())
@@ -128,12 +136,12 @@ void ISupervisor::to_write()
         setState(ST_ERROR);
     }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::to_error()
 {
     setState(ST_ERROR);
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::dummyWrite
  * @brief write something useless just to prevent arduino from shutting down all its pins
@@ -150,7 +158,7 @@ void ISupervisor::dummyWrite()
 
     iEntered++;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
 * @brief Initialize State Machine
 */
@@ -158,7 +166,7 @@ void ISupervisor:: init(void)
 {
     enStatus = ST_IDLE ;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
 * @brief ISupervisor::execute one cycle of state Machine
 */
@@ -184,17 +192,17 @@ void ISupervisor::executeSM(void)
         break;
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool ISupervisor::isSerialOpen()
 {
     return serialcontroller.isOpen();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::shutdownPins()
 {
     serialcontroller.emergencyShutdown();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::isReady
  * @brief checks if the serialport is open and if a file has been selected by the user
@@ -207,12 +215,20 @@ bool ISupervisor::isReady()
     {
         bReady = false;
     }
-    if (vec_intTime.length()<1){
+    if (vec_intTime.length()<1)
+    {
         bReady = false;
+    }
+    //@TODO
+    //Qui devo controllare che il dispositivo BLE sia connesso ed inizializzato
+    //nel caso in cui venga scelgo il sensore ble
+    if (iSettings.load(iSettings.SET_CHECKSENSOR).toInt() == SNS_BLE)
+    {
+
     }
     return bReady;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
 * @brief set status State Machine
 * @param svState   new status for the State Machine
@@ -222,7 +238,7 @@ void ISupervisor:: setState(enumSvStates svState)
     enNxtStatus = svState;
     aLog.log("TRANS "+ QString::number(enStatus)+" -> "+ QString::number(svState));
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::adjstWriteDoneAfterStop
  * @brief if stop button is pressed, write done diminish by one
@@ -234,7 +250,7 @@ void ISupervisor::adjstWriteDoneAfterStop()
         iWriteDone--;
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
 * @brief Log some text
 * @param u8aMsg
@@ -249,7 +265,7 @@ void ISupervisor::log(char * u8aMsg, unsigned long lSz)
         aLog.log(u8aMsg256);
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::setCyclesToDo(int iNum)
 {
     if (iNum > 0 && iNum <= 100000)
@@ -257,23 +273,23 @@ void ISupervisor::setCyclesToDo(int iNum)
         iCyclesToDo = iNum;
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::loadNewFile()
 {
     resetWriteDone();
     updateScriptSize();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::updateScriptSize()
 {
     lSzScript = vec_intTime.length();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::resetCyclesDone(void)
 {
     iCyclesDone=0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::returnMessage
  * returns message that confirm that openserialport has succeded
@@ -283,17 +299,17 @@ QString ISupervisor::returnMessage(void)
 {
     return str_message;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::setSafetyStop(QString str_safe)
 {
     serialcontroller.setSafetyStop(str_safe);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::resetWriteDone()
 {
     iWriteDone = 0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::setRandomness
  * @brief checks that the randomness inserted by the user is between some specific values
@@ -314,7 +330,7 @@ void ISupervisor::setRandomness(int iNumRandom)
         iRandomInterval = iNumRandom;
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::randomizeNumber
  * given a number, return a random number in the interval selected
@@ -334,7 +350,7 @@ int ISupervisor::randomizeNumber(int iNumber)
     }
     return iNumber;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::checkSensor
  * @brief if enabled, check if the sensor returns correct data or if there are problems
@@ -361,7 +377,7 @@ bool ISupervisor::checkSensor(void)
     ulCounter = 0;
     return true;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::handleNewCycle()
 {
     if (iWriteDone >= lSzScript)
@@ -387,7 +403,7 @@ void ISupervisor::handleNewCycle()
         aLog.log("Saved number");
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::getRandomizedVector()
 {
     static int iAppo = 1;
@@ -398,7 +414,7 @@ void ISupervisor::getRandomizedVector()
         vec_intRandomTimes.append(iAppo);
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 /**
  * @brief ISupervisor::processSensorOutput
  * @brief process the message retrieved from the read function to check the values transmitted by
@@ -436,7 +452,7 @@ void ISupervisor::processSensorOutput(void)
         }
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::setSensorError(bool error)
 {
     if (error)
@@ -456,10 +472,10 @@ void ISupervisor::setSensorError(bool error)
         str_sensError.append(QString::number(iConsecutiveErrors));
     }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ISupervisor::resetSensorErrorCount(void)
 {
     str_sensError = "";
     iConsecutiveErrors = 0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
