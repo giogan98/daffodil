@@ -43,7 +43,7 @@ public:
     bool write(QByteArray qba_toWrite);
     QString openSerialPort();
     void closeSerialPort();
-    void setSafetyStop(QString str_todo);
+    void setSafetyStop(QString str_action);
     void emergencyShutdown();
     bool isOpen(){ return serial->isOpen(); }
 

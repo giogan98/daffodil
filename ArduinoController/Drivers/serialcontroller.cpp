@@ -10,18 +10,18 @@
 
 SerialController::SerialController()
 {
-    serial = new QSerialPort ;
-    qba_requestedBytes = ""  ;
+    serial = new QSerialPort;
+    qba_requestedBytes = "";
 }
 //------------------------------------------------------------------------------
 SerialController::~SerialController()
 {
-    serial->deleteLater(); // @hint check if this create problems or not
+    delete serial;
 }
 //------------------------------------------------------------------------------
 QString SerialController::openSerialPort()
 {
-    QString str_temp="";
+    QString str_temp= "";
     if (serial->isOpen())
     {
         closeSerialPort();
@@ -45,11 +45,11 @@ QString SerialController::openSerialPort()
     }
     else
     {
-        //qDebug()<<"[!]Device not connected"             ;
+        //qDebug()<<"[!]Device not connected";
         aLog.log("[!]Device not connected");
         str_temp.append("Device not connected");
     }
-    return  str_temp;
+    return str_temp;
 }
 //------------------------------------------------------------------------------
 /**
@@ -62,22 +62,22 @@ void SerialController::closeSerialPort()
     aLog.log("Device disconnected");
 }
 //------------------------------------------------------------------------------
-void SerialController::setSafetyStop(QString str_todo)
+void SerialController::setSafetyStop(QString str_action)
 {
     //FILE SYNTAX: [!DO$.0] or [!DO$.1]
     bool bSucc = true;
 
-    if (!str_todo.contains("[") || !str_todo.contains("]"))
+    if (!str_action.contains("[") || !str_action.contains("]"))
     {
         bSucc = false;
     }
 
-    if (!str_todo.contains("!DO") || !str_todo.contains("."))
+    if (!str_action.contains("!DO") || !str_action.contains("."))
     {
         bSucc = false;
     }
 
-    QStringList strl_splitted = str_todo.split("$");
+    QStringList strl_splitted = str_action.split("$");
 
     if (strl_splitted.length() != 2)
     {
