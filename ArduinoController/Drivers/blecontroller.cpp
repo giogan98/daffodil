@@ -10,6 +10,7 @@
 #define BLE_UUID_GYROSCOPE_CHARACTERISTIC_Y     "ef1cdf9d-56fd-437d-8c4e-3a77cf8c8265"
 #define BLE_UUID_GYROSCOPE_CHARACTERISTIC_Z     "69911b28-ffcc-4a65-85de-1b501f7a5e40"
 
+
 //------------------------------------------------------------------------------
 BLEcontroller::BLEcontroller()
 {
@@ -126,7 +127,7 @@ void BLEcontroller::scanFinished(void)
     emit deviceListAvaiable(list_devicesInfos);
 }
 //------------------------------------------------------------------------------
-void BLEcontroller::getSelectedDevice(int iIndex)
+void BLEcontroller::connectToSelectedDevice(int iIndex)
 {
     QBluetoothDeviceInfo bdiTemp;
     if (list_devicesInfos.length() > iIndex)
@@ -305,35 +306,34 @@ void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const Q
 
     if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X))
     {
-        vfAccelerometer[0] = fValue;
+        vfAccelerometer[AXIS_X] = fValue;
         emit newAccDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Y))
     {
-        vfAccelerometer[1] = fValue;
+        vfAccelerometer[AXIS_Y] = fValue;
         emit newAccDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Z))
     {
-        vfAccelerometer[2] = fValue;
+        vfAccelerometer[AXIS_Z] = fValue;
         emit newAccDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_X))
     {
-        vfGyroscope[0] = fValue;
+        vfGyroscope[AXIS_X] = fValue;
         emit newGyroDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Y))
     {
-        vfGyroscope[1] = fValue;
+        vfGyroscope[AXIS_Y] = fValue;
         emit newGyroDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Z))
     {
-        vfGyroscope[2] = fValue;
+        vfGyroscope[AXIS_Z] = fValue;
         emit newGyroDataAvaiable(fValue);
     }
-
 }
 //------------------------------------------------------------------------------
 float BLEcontroller::QByteArrayToFloat(const QByteArray &qba)

@@ -13,6 +13,12 @@ public:
     QString m_info;
     QVector<float> vfAccelerometer;
     QVector<float> vfGyroscope;
+    typedef enum
+    {
+        AXIS_X = 0,
+        AXIS_Y = 1,
+        AXIS_Z = 2,
+    }enAxes;
 
 private:
     bool bFoundDataService;
@@ -42,7 +48,7 @@ public slots:
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);
     void startDeviceScan(void);
     void scanFinished(void);
-    void getSelectedDevice(int iIndex);
+    void connectToSelectedDevice(int iIndex);
     void serviceDiscovered(const QBluetoothUuid &gatt);
     void serviceScanDone(void);
     void serviceStateChanged(QLowEnergyService::ServiceState s);
