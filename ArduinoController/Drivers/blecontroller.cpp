@@ -1,5 +1,7 @@
 #include "blecontroller.h"
 
+#include <QTimer>
+
 #define BLE_UUID_DATA_SERVICE                   "5aaeb650-c2cb-44d1-b4ab-7144e08aed2e"
 
 #define BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X "f4055745-6f5a-4e2b-8433-2704337cc3b5"
@@ -20,6 +22,12 @@ BLEcontroller::BLEcontroller()
     bFoundDataService = false;
     vfAccelerometer = QVector<float>(3, 0); //vfAccelerometer = [X, Y, Z]
     vfGyroscope = QVector<float>(3, 0); //vfGyroscope = [X, Y, Z]
+    vfAccelerometerOffset = QVector<float>(3, 0);
+    vfGyroscopeOffset = QVector<float>(3, 0);
+    viAccelerometerOffsetCounter = QVector<int>(3, 0);
+    viGyroscopeOffsetCounter = QVector<int>(3, 0);
+
+    bCalibration = false;
 }
 //------------------------------------------------------------------------------
 /**
@@ -300,40 +308,88 @@ void BLEcontroller::serviceStateChanged(QLowEnergyService::ServiceState leServic
     }
 }
 //------------------------------------------------------------------------------
+//@todo simplify this functions ex: int iAxis, switch, etc
 void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
     float fValue = QByteArrayToFloat(value);
-
     if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X))
     {
+        qDebug()<<"ACCX :"<<fValue;
         vfAccelerometer[AXIS_X] = fValue;
+        calibrateSensor(vfAccelerometerOffset[AXIS_X], fValue, viAccelerometerOffsetCounter[AXIS_X]);
         emit newAccDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Y))
     {
+        qDebug()<<"ACCY :"<<fValue;
         vfAccelerometer[AXIS_Y] = fValue;
+        calibrateSensor(vfAccelerometerOffset[AXIS_Y], fValue, viAccelerometerOffsetCounter[AXIS_Y]);
         emit newAccDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Z))
     {
+        qDebug()<<"ACCZ :"<<fValue;
         vfAccelerometer[AXIS_Z] = fValue;
+        calibrateSensor(vfAccelerometerOffset[AXIS_Z], fValue, viAccelerometerOffsetCounter[AXIS_Z]);
         emit newAccDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_X))
     {
+        qDebug()<<"GYROX :"<<fValue;
         vfGyroscope[AXIS_X] = fValue;
+        calibrateSensor(vfGyroscopeOffset[AXIS_X], fValue, viGyroscopeOffsetCounter[AXIS_X]);
         emit newGyroDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Y))
     {
+        qDebug()<<"GYROY :"<<fValue;
         vfGyroscope[AXIS_Y] = fValue;
+        calibrateSensor(vfGyroscopeOffset[AXIS_Y], fValue, viGyroscopeOffsetCounter[AXIS_Y]);
         emit newGyroDataAvaiable(fValue);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_GYROSCOPE_CHARACTERISTIC_Z))
     {
+        qDebug()<<"GYROZ :"<<fValue;
         vfGyroscope[AXIS_Z] = fValue;
+        calibrateSensor(vfGyroscopeOffset[AXIS_Z], fValue, viGyroscopeOffsetCounter[AXIS_Z]);
         emit newGyroDataAvaiable(fValue);
     }
+}
+//------------------------------------------------------------------------------
+void BLEcontroller::startDeviceCalibration(int iTimer)
+{
+    bCalibration = true;
+    QTimer::singleShot(iTimer, this, SLOT(finishSensorCalibration()));
+}
+//------------------------------------------------------------------------------
+void BLEcontroller::calibrateSensor(float &fSensorAxisValues, const float &fValue, int &iSensorAxisCounter)
+{
+    if(!bCalibration)
+        return;
+    fSensorAxisValues = fSensorAxisValues + fValue;
+    iSensorAxisCounter++;
+}
+//------------------------------------------------------------------------------
+void BLEcontroller::finishSensorCalibration(void)
+{
+    bCalibration = false;
+    for (int ii = 0; ii < 3; ii++)
+    {
+        if (viAccelerometerOffsetCounter[ii] != 0)
+        {
+            vfAccelerometerOffset[ii] = vfAccelerometerOffset[ii] / viAccelerometerOffsetCounter[ii];
+        }
+
+        if (viGyroscopeOffsetCounter[ii] != 0)
+        {
+            vfGyroscopeOffset[ii] = vfGyroscopeOffset[ii] / viGyroscopeOffsetCounter[ii];
+        }
+    }
+    qDebug()<<"Accelerometer: "<<vfAccelerometer;
+    qDebug()<<"Acc offset: "<<vfAccelerometerOffset;
+    qDebug()<<"Gyro :" <<vfGyroscope;
+    qDebug()<<"Gyro offset: "<<vfGyroscopeOffset;
+
 }
 //------------------------------------------------------------------------------
 float BLEcontroller::QByteArrayToFloat(const QByteArray &qba)

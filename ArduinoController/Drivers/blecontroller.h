@@ -13,6 +13,11 @@ public:
     QString m_info;
     QVector<float> vfAccelerometer;
     QVector<float> vfGyroscope;
+    QVector<float> vfAccelerometerOffset;
+    QVector<float> vfGyroscopeOffset;
+    QVector<int> viAccelerometerOffsetCounter;
+    QVector<int> viGyroscopeOffsetCounter;
+    bool bCalibration;
     typedef enum
     {
         AXIS_X = 0,
@@ -43,6 +48,7 @@ private:
     void connectServicePointer(QLowEnergyService *ptr_service);
     float QByteArrayToFloat(const QByteArray &qba);
     void setDevice(QBluetoothDeviceInfo device);
+    void calibrateSensor(float &fSensorAxisValues, const float &fValue, int &iSensorAxisCounter);
 
 public slots:
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);
@@ -53,10 +59,12 @@ public slots:
     void serviceScanDone(void);
     void serviceStateChanged(QLowEnergyService::ServiceState s);
     void updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value);
+    void startDeviceCalibration(int iTimer);
+    void finishSensorCalibration(void);
 
 signals:
-    void errorChanged();
-    void infoChanged();
+    void errorChanged(void);
+    void infoChanged(void);
     void deviceListAvaiable(QList<QBluetoothDeviceInfo>);
     void newAccDataAvaiable(float);
     void newGyroDataAvaiable(float);
