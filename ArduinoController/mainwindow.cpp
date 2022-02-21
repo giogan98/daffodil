@@ -38,6 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, SIGNAL(startBleDeviceSearch()), iSupervisor.blecontroller, SLOT(startDeviceScan()));
     connect(iSupervisor.blecontroller, SIGNAL(deviceListAvaiable(QList<QBluetoothDeviceInfo>)), this, SLOT(displayBleDeviceList(QList<QBluetoothDeviceInfo>)));
     connect(this, SIGNAL(bleDeviceSelected(int)), iSupervisor.blecontroller, SLOT(connectToSelectedDevice(int)));
+    connect(this, SIGNAL(startBleDeviceCalibration(int)), iSupervisor.blecontroller, SLOT(startDeviceCalibration(int)));
 
     //connect(iSupervisor.blecontroller, SIGNAL(newAccDataAvaiable(float)), this, SLOT(updateAccelerometerData(float)));
     //connect(iSupervisor.blecontroller, SIGNAL(newGyroDataAvaiable(float)), this, SLOT(updateGyroscopeData(float)));
@@ -67,6 +68,7 @@ void MainWindow::on_pbn_openFile_clicked()
         fileproc.processFile(str_filePath);
         ui->label_filePath->setText(str_filePath);
         ui->groupBox_setup->hide();
+        ui->groupBox_bleSettings->hide();
         ui->label_filePath->show();
         ui->groupBox_main->show();
     }
@@ -317,6 +319,7 @@ void MainWindow::handleGraphicInit(void)
     ui->pbn_advancedSettings->setIconSize(size_advSett_button);
 
     ui->groupBox_setup->hide();
+    ui->groupBox_bleSettings->hide();
     ui->label_filePath->hide();
 
     selectCorrectRadioButtonOnStartup();
@@ -327,6 +330,7 @@ void MainWindow::on_pbn_setUp_clicked()
     ui->groupBox_main->hide();
     ui->groupBox_menu->hide();
     ui->groupBox_setup->show();
+    ui->groupBox_bleSettings->show();
 }
 //------------------------------------------------------------------------------
 void MainWindow::on_pbn_openMenu_clicked()
@@ -344,6 +348,7 @@ void MainWindow::on_pbn_openMenu_clicked()
 void MainWindow::on_pbn_home_clicked()
 {
     ui->groupBox_setup->hide();
+    ui->groupBox_bleSettings->hide();
     ui->groupBox_menu->hide();
     if (ui->groupBox_main->isHidden())
     {
@@ -395,6 +400,6 @@ void MainWindow::on_pb_connectBLE_clicked()
 //------------------------------------------------------------------------------
 void MainWindow::on_pb_calibrateBLE_clicked()
 {
-
+    emit startBleDeviceCalibration(10000);
 }
 //------------------------------------------------------------------------------

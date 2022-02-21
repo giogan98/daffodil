@@ -64,5 +64,6 @@ private slots:
 signals:
     void startBleDeviceSearch(void);
     void bleDeviceSelected(int);
+    void startBleDeviceCalibration(int);
 };
 #endif // MAINWINDOW_H
