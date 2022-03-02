@@ -197,7 +197,7 @@ void BLEcontroller::serviceDiscovered(const QBluetoothUuid &gatt)
         qDebug()<<"Found data service";
         return;
     }
-    bFoundDataService = false; //@todo ha senso introdurre questo??
+    bFoundDataService = false;
     qDebug()<<"Data service not found";
 }
 //------------------------------------------------------------------------------
@@ -309,6 +309,8 @@ void BLEcontroller::serviceStateChanged(QLowEnergyService::ServiceState leServic
 }
 //------------------------------------------------------------------------------
 //@todo simplify this functions ex: int iAxis, switch, etc
+//@todo display "connecting" status until first values are read. After that make
+//      possible to do the calibration of the sensors
 void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
     float fValue = QByteArrayToFloat(value);

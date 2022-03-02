@@ -88,7 +88,7 @@ void MainWindow::on_pbn_startPause_clicked()
         QString str_fileToTest = iSettings.load(ISettings::SET_FILEPATH).toString();
         if (QFile(str_fileToTest).exists())
         {
-            fileproc.processFile(str_fileToTest); // @todo check if file content is valid or not
+            fileproc.processFile(str_fileToTest);
             ui->label_filePath->setText(str_fileToTest);
             ui->label_filePath->show();
         }
