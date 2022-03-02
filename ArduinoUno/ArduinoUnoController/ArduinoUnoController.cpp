@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <string.h>
 #include <math.h>
-long lDelayBoost = 20;
 
 //-----------------------------
 typedef enum {
@@ -48,421 +47,8 @@ enum {
 	D13 ,
 };
 
-
-int New;
-int K;
-//----------------------------
-
-int lSupLimit = 50;
-int lInfLimit = 200;
-const int lBreakRun_mm = 5; // Delta mm to break or boost
-
-struct
-{
-	int  lCycles ;/// param Num cycles
-	int  lHeight;/// param Height
-	long lWait  ;/// param ms to wait in reverting direction
-	bool bMove  ;/// param saying to move
-} stParam;
-enum {
-	PAR_CYCLES = 1,
-	PAR_HEIGHT = 2,
-	PAR_MOVE   = 3,
-	PAR_WAIT   = 4,
-};
-
-int lCurrCycle = 0; /// current cycle number
-
-typedef enum {
-	ST_INIT = 0,
-	ST_UP,
-	ST_WAIT_UP,
-	ST_WAIT_DWN,
-	ST_DWN,
-	ST_STOP,
-	ST_HOME,
-	ST_BOOST_UP,
-	ST_BREAK_UP,
-	ST_BOOST_DWN,
-	ST_BREAK_DWN,
-	ST_RESET,
-	ST_PAUSE,
-} enumState ;
-
-enumState enState = ST_INIT;
-enumState enOldState = ST_INIT;
-
-//------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------
-#define PIN_POTENT       A1 // potentiometer : mm*0,57703=A4 || A4*1.733 = mm
-#define PIN_THERM_A      A4 // termistor A
-#define PIN_THERM_B      A5 // termistor B
-#define PIN_UP           13 // Enable  : DO2.1,
-#define PIN_DOWN         4  // Go UP   : DO3.0,
-#define PIN_ENABLE       2  // Go Down : DO4.0,
-
-
-void setup(void)
-{
-	pinMode(3, OUTPUT);
-	pinMode(6, OUTPUT);
-	pinMode(9, OUTPUT);
-	pinMode(10, OUTPUT);
-	pinMode(13, OUTPUT);
-	Serial.begin(9600);
-
-	stParam.lCycles  = 0; // param Num cycles
-	stParam.lHeight  = 0; // param Height
-	stParam.lWait    = 0; // param ms to wait in reverting direction
-}
-
-
 //--------------------------------------------------------------
-//altre funzioni
-double calcTemp(int value, double R0) {
-	int B = 4450;
-	double V = 5 / 1023.00 * value;
-	double R = (R0 * 5.00 / V) - R0;
-	float esp = (float)(B) / -298.15;
-	double Rinf = 47000 * pow(M_E, esp);
-	double T = B / (log(R / Rinf));
-	return T - 273.15;
-}
-//-------------------------------------------------------------
-/**
- * Transmission of Potentiometer value
- * @param lVal   value to be sent on RS232
- */
-void sendPotentiometer(long lVal)
-{
-	Serial.print("[POT:\t");
-	Serial.print(lVal);
-	Serial.print("]");
-}
-//------------------------------------------------------------------------------
-void setDoUp(void)
-{
-	// ALL stop: DO2.0,
-
-	// Enable  : DO2.1,
-	// Go UP   : DO3.0,
-	// Go Down : DO4.0,
-	digitalWrite(PIN_UP  , LOW );
-	digitalWrite(PIN_DOWN , HIGH);
-}
-//------------------------------------------------------------------------------
-void setDoDown(void)
-{
-	digitalWrite(PIN_DOWN , LOW );
-	digitalWrite(PIN_UP  , HIGH);
-}
-//------------------------------------------------------------------------------
-void setDoStop(void)
-{
-	digitalWrite(PIN_DOWN , LOW );
-	digitalWrite(PIN_UP  , LOW );
-}
-//------------------------------------------------------------------------------
-
-void updateLimits()
-{
-	lSupLimit = lInfLimit + stParam.lHeight;
-	lInfLimit += lBreakRun_mm; // reduce run for break / boost space
-	lSupLimit -= lBreakRun_mm;
-}
-//------------------------------------------------------------------------------
-
-void setState(const enumState enVal)
-{
-	enOldState = enState;
-	enState = enVal;
-}
-//------------------------------------------------------------------------------
-void stateReset()
-{
-	stParam.lCycles = 0;
-	stParam.bMove = 0;
-	Serial.println("RESET");
-	setup();
-	setState(ST_INIT);
-}//-----------------------------------------------------------------------------
-void statePause(void)
-{
-	setDoStop();
-	Serial.println("Pause");
-	updateLimits();
-	if ( stParam.bMove == 1 )
-	{
-		setState(enOldState);
-	}
-}
-
-//------------------------------------------------------------------------------
-/**
- * @brief get Height in mm
- * @return value [mm]
- */
-long getHeight()
-{
-	long lPotAnalog = analogRead(PIN_POTENT);
-	long lPot_mm = (long)( 1.733f * (float) lPotAnalog);
-	return(lPot_mm);
-}
-//------------------------------------------------------------------------------
-
-void stateInit(void)
-{
-	long lHeight_mm = getHeight();
-
-	Serial.print("(st_init) H_mm: "); //inutile ma fa capire che entra nello stato initilize
-	Serial.println(lHeight_mm);
-
-	if (stParam.lHeight > 0 && stParam.lCycles > 0)
-	{
-		setState(ST_HOME);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateGoUp(void)
-{
-	long lHeight_mm = getHeight();
-	setDoUp();
-	Serial.print("(st_up) H_mm: ");
-	Serial.println(lHeight_mm);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lHeight_mm >= lSupLimit)
-	{
-		setState(ST_BREAK_UP);
-	}
-
-}
-//------------------------------------------------------------------------------------
-
-void stateWaitUp(void)
-{
-	setDoStop();
-	delay(stParam.lWait);
-
-	Serial.print("(st_wait_up) Reverting Direction (DOWN -> UP) ");
-	Serial.print("Completed cycles: ");
-	Serial.println(lCurrCycle);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lCurrCycle >= stParam.lCycles)
-	{
-		setState(ST_STOP);
-	}
-	else
-	{
-		setState(ST_BOOST_UP);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateWaitDown()
-{
-	setDoStop();
-	delay(stParam.lWait);
-	Serial.println("Reverting Direction (UP -> DOWN)");
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	} else {
-		setState(ST_BOOST_DWN);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateGoDown()
-{
-	setDoDown();
-	long lHeight_mm = getHeight();
-
-	Serial.print("(st_down) H_mm: ");
-	Serial.println(lHeight_mm);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lHeight_mm <= lInfLimit)
-	{
-		lCurrCycle++;
-		setState(ST_BREAK_DWN);
-	}
-
-}
-//------------------------------------------------------------------------------------
-
-void stateEmergency(void)
-{
-	setDoStop();
-	Serial.println("Emergency!");
-	delay(2000);
-}
-//------------------------------------------------------------------------------------
-
-void stateStop()
-{
-	setDoStop();
-	Serial.println("Stop: End of test");
-	delay(2000);
-	stateReset();
-}
-
-//------------------------------------------------------------------------------
-void stateHoming()
-{
-	setDoDown();
-	long lheight0 = getHeight();
-	delay(1000);
-	long lheight1 = getHeight();
-
-	Serial.print("(st_homing) H_mm: ");
-	Serial.println(lheight1);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lheight1 - lheight0 < 5)
-	{
-		setDoStop();
-		lCurrCycle = 0;
-		lInfLimit = lheight0 ;
-		updateLimits(); // reduce run for break / boost space
-		setState(ST_WAIT_UP);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateBoostUp()
-{
-	setDoUp();
-	long lHeight_mm = getHeight();
-
-	Serial.print("(st_boostUp) H_mm: ");
-	Serial.println(lHeight_mm);
-
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lHeight_mm >= lInfLimit)
-	{
-		setState(ST_UP);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateBoostDown()
-{
-	setDoDown();
-	long lHeight_mm = getHeight();
-
-	Serial.print("(st_boostDown) H_mm: ");
-	Serial.println(lHeight_mm);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lHeight_mm <= lSupLimit)
-	{
-		setState(ST_DWN);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateBreakUp()
-{
-	long lHeight_mm = getHeight();
-	setDoUp(); // replace with break!
-	Serial.print("(st_breakUp) H_mm: ");
-	Serial.println(lHeight_mm);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lHeight_mm >= lSupLimit)
-	{
-		setState(ST_WAIT_DWN);
-	}
-}
-//------------------------------------------------------------------------------------
-
-void stateBreakDown()
-{
-	long lHeight_mm = getHeight();
-	setDoDown(); // replace with break!
-	Serial.print("(st_breakDown) H_mm: ");
-	Serial.println(lHeight_mm);
-
-	if ( stParam.bMove == 0 )
-	{
-		setState(ST_PAUSE);
-	}else if (lHeight_mm <= lInfLimit)
-	{
-		setDoStop();
-		setState(ST_WAIT_UP);
-	}
-}
-//---------------------------------------------------------------------
-void stateMachine()
-{
-	switch (enState)
-	{
-	case ST_INIT:
-		stateInit();
-		break;
-	case ST_UP:
-		stateGoUp();
-		break;
-	case ST_WAIT_UP:
-		stateWaitUp();
-		break;
-	case ST_WAIT_DWN:
-		stateWaitDown();
-		break;
-	case ST_DWN:
-		stateGoDown();
-		break;
-	case ST_STOP:
-		stateStop();
-		break;
-	case ST_HOME:
-		stateHoming();
-		break;
-	case ST_BOOST_UP:
-		stateBoostUp();
-		break;
-	case ST_BOOST_DWN:
-		stateBoostDown();
-		break;
-	case ST_BREAK_UP:
-		stateBreakUp();
-		break;
-	case ST_BREAK_DWN:
-		stateBreakDown();
-		break;
-	case ST_RESET:
-		stateReset();
-		break;
-	case ST_PAUSE:
-		statePause();
-		break;
-	default:
-		stateEmergency();
-		break;
-	}
-}
-
-
-//-------------------------------------------------------------
-
+//Okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
 long serRead( char *msg , long lSzMsg)
 {
 	int ii = 0;
@@ -639,7 +225,6 @@ int getValidMessage (char * pu8aValidMsg, long lSzMsg)
 	}
 	return(lSzPayload);
 }
-
 //-------------------------------------------------------------
 int extractMsg (char * pu8aValidMsg)
 {
@@ -700,16 +285,7 @@ int extractMsg (char * pu8aValidMsg)
 	}
 	return lSzValidMsg;
 }
-
-
-//------------------------------------------------------------------------------------
-
-void callback()
-{
-	digitalWrite(10, digitalRead(10) ^ 1);
-}
 //------------------------------------------------------------------------------
-
 void processReqDigitalPin(long lPin, char * u8aMsgTx, long lSzPld)
 {
 	long lVal;
@@ -748,7 +324,6 @@ void processReqDigitalPin(long lPin, char * u8aMsgTx, long lSzPld)
 	}
 }
 //------------------------------------------------------------------------------
-
 void processReqAnalogPin(long lPin, char * u8aMsgTx, long lSzPld)
 {
 	long lVal;
@@ -773,12 +348,10 @@ void processReqAnalogPin(long lPin, char * u8aMsgTx, long lSzPld)
 				break;
 			}
 			//Serial.println(u8aMsgTx);
-
 		}
 	}
 }
 //------------------------------------------------------------------------------
-
 void processReqParam(long lParam, char * u8aMsgTx, long lSzPld)
 {
 	long lVal;
@@ -807,10 +380,8 @@ void processReqParam(long lParam, char * u8aMsgTx, long lSzPld)
 			snprintf(u8aMsgTx, lSzPld,"%c?PM%ld.%c", STX_CH, lParam , ETX_CH );
 		}
 		//Serial.println(u8aMsgTx);
-
 	}
 }
-
 //------------------------------------------------------------------------------
 /**
  * @brief crunch messdsage to se Set Do
@@ -871,33 +442,6 @@ void processSetAnalogPin(long lPin, char * u8aMsgRx, long lSzPld)
 			case A5 :
 				analogWrite( lPin, lVal);
 				//Serial.println(ACK_CH);
-				break;
-
-			default:
-				break;
-			}
-		}
-	}
-}
-//------------------------------------------------------------------------------
-
-void crunchRxDo(long lPin, char * u8aMsgRx, long lSzPld)
-{
-	bool bOk = true;
-	long lVal = -1;
-	if ( u8aMsgRx!=NULL && lSzPld>0 )
-	{
-
-		lVal = getPayloadLong(u8aMsgRx, lSzPld, &bOk);
-		if(bOk)
-		{
-			switch (lPin)
-			{
-			case 1:
-				stParam.lCycles = lVal;
-				break;
-			case 2:
-				stParam.lHeight = lVal;
 				break;
 
 			default:
@@ -1002,18 +546,18 @@ void crunchSerial(void)
 	}
 }
 //------------------------------------------------------------------------------
-/**
- * @brief loop
- */
+void setup(void)
+{
+	pinMode(3, OUTPUT);
+	pinMode(6, OUTPUT);
+	pinMode(9, OUTPUT);
+	pinMode(10, OUTPUT);
+	pinMode(13, OUTPUT);
+	Serial.begin(9600);
+}
+//------------------------------------------------------------------------------
 void loop(void)
 {
 	crunchSerial();
-	//sateMachine();
 	delay(50);
 }
-
-
-
-
-
-
