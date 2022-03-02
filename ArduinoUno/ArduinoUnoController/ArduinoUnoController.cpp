@@ -2,7 +2,13 @@
 #include <string.h>
 #include <math.h>
 
-//-----------------------------
+
+#define STX_CH  ('[')
+#define ETX_CH  (']')
+#define SZ_TEMP 16
+#define SZ_RX_BUFF 64
+
+
 typedef enum {
 	CMD_INVALID = -1,
 	CMD_NONE = 0,
@@ -47,8 +53,11 @@ enum {
 	D13 ,
 };
 
+int iCounter = 0;
+char ku8aRawRxMsg[SZ_RX_BUFF];
+long lSzRxMsg = 0;
+
 //--------------------------------------------------------------
-//Okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
 long serRead( char *msg , long lSzMsg)
 {
 	int ii = 0;
@@ -64,17 +73,6 @@ long serRead( char *msg , long lSzMsg)
 	}
 	return(ii);
 }
-//-------------------------------------------------------------
-#define STX_CH  ('[')
-#define ETX_CH  (']')
-#define ACK_CH  ('£')
-#define NAK_CH  (0x15)
-#define SZ_TEMP 16
-#define SZ_RX_BUFF 64
-
-char ku8aRawRxMsg[SZ_RX_BUFF];
-long lSzRxMsg = 0;
-
 //-------------------------------------------------------------
 char * getNearestStx(const char *pu8aRawRxMsg, const char *pEtx)
 {
@@ -495,6 +493,7 @@ void crunchSerial(void)
 		long lSzPld = getValidMessage (u8aMsgRx, lNumEl);
 		if ( lSzPld > 0 )
 		{
+			iCounter = 0;
 			enumCmd enCmd = getCmd(u8aMsgRx, lSzPld);
 			enumPer enPer = getPeriph(u8aMsgRx, lSzPld);
 			bool bOk;
@@ -546,12 +545,27 @@ void crunchSerial(void)
 	}
 }
 //------------------------------------------------------------------------------
+void checkActivity(void)
+{
+	if (iCounter > 400)
+	{
+		for (int ii = 1; ii <= 13; ii++)
+		{
+			digitalWrite(ii,LOW);
+		}
+	}
+	iCounter++;
+}
+//------------------------------------------------------------------------------
 void setup(void)
 {
 	pinMode(3, OUTPUT);
+	pinMode(4, OUTPUT);
+	pinMode(5, OUTPUT);
 	pinMode(6, OUTPUT);
+	pinMode(7, OUTPUT);
 	pinMode(9, OUTPUT);
-	pinMode(10, OUTPUT);
+	pinMode(10, INPUT);
 	pinMode(13, OUTPUT);
 	Serial.begin(9600);
 }
@@ -559,5 +573,7 @@ void setup(void)
 void loop(void)
 {
 	crunchSerial();
+	checkActivity();
 	delay(50);
 }
+//------------------------------------------------------------------------------
