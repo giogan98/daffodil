@@ -159,15 +159,12 @@ long getPayloadLong (char * pu8aValidMsg, long lSzMsg, bool * pbOk)
     char *pLong = (char *)memchr (u8aPeriph, '.', lSzMsg);
     char * pEnd=NULL;
     long li1 = strtol(++pLong,&pEnd,10);
-    //Serial.print(li1);
     if (pEnd > pLong )
     {
       lVal= li1;
       *pbOk = true;
-      //Serial.print("a");
     }
   }
-  //Serial.println(lVal);
   return(lVal);
 }
 //-------------------------------------------------------------
@@ -305,7 +302,6 @@ void processReqDigitalPin(long lPin, char * u8aMsgTx, long lSzPld)
       case D13:
 
         lVal = digitalRead(lPin);
-        //Serial.println(lVal);
         snprintf(u8aMsgTx, lSzPld, "%c?DI%02li.%li%c", STX_CH, lPin ,lVal, ETX_CH );
         break;
       default:
@@ -340,7 +336,6 @@ void processReqAnalogPin(long lPin, char * u8aMsgTx, long lSzPld)
         snprintf(u8aMsgTx, lSzPld,"%c?AI%ld.%c", STX_CH, lPin , ETX_CH );
         break;
       }
-      //Serial.println(u8aMsgTx);
     }
   }
 }
@@ -354,21 +349,15 @@ void processReqAnalogPin(long lPin, char * u8aMsgTx, long lSzPld)
 void processSetDigitalPin(long lPin, char * u8aMsgRx, long lSzPld)
 {
   bool bOk = true;
-  //Serial.print("D");
   if ( u8aMsgRx!=NULL && lSzPld>0 )
   {
-    //Serial.print("E");
     long lVal = getPayloadLong(u8aMsgRx, lSzPld, &bOk);
     if( bOk )
     {
-      //Serial.println("F");
       switch (lVal)
       {
       case LOW:
       case HIGH:
-        //Serial.println(ACK_CH);
-        //Serial.print(lVal+"!");
-        //Serial.print(lPin);
         digitalWrite( lPin, lVal);
         break;
       default:
@@ -403,7 +392,6 @@ void processSetAnalogPin(long lPin, char * u8aMsgRx, long lSzPld)
       case A4 :
       case A5 :
         analogWrite( lPin, lVal);
-        //Serial.println(ACK_CH);
         break;
 
       default:
@@ -421,22 +409,18 @@ void crunchSerial(void)
   char u8aMsgRx[10] = {0,};
   char u8aMsgTx[10] = {0,};
   long lNumEl = extractMsg (u8aMsgRx);
-  //Serial.print(".");
-  if( lNumEl > 0 ) // [.....]
+  if(lNumEl > 0) // [.....]
   {
-    //Serial.println("A");
     long lSzPld = getValidMessage (u8aMsgRx, lNumEl);
-    if ( lSzPld > 0 )
+    if (lSzPld > 0)
     {
       iCounter = 0;
       enumCmd enCmd = getCmd(u8aMsgRx, lSzPld);
       enumPer enPer = getPeriph(u8aMsgRx, lSzPld);
       bool bOk;
       long lPin = getSubDevice(u8aMsgRx, lSzPld, &bOk);
-      //Serial.print("B");
-      if( bOk && enCmd == CMD_SET )
+      if(bOk && enCmd == CMD_SET)
       {
-        //Serial.print("C");
         switch (enPer)
         {
         case PER_DO:
@@ -454,7 +438,7 @@ void crunchSerial(void)
           break;
         }
       }
-      if( enCmd == CMD_REQ )
+      if(enCmd == CMD_REQ)
       {
         long lSzMsg = sizeof(u8aMsgTx);
         switch (enPer)
@@ -491,14 +475,9 @@ void checkActivity(void)
 //------------------------------------------------------------------------------
 void setup(void)
 {
-  pinMode(3, OUTPUT);
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(9, OUTPUT);
-  pinMode(10, INPUT);
-  pinMode(13, OUTPUT);
+  pinMode(3, OUTPUT); //OK movement button
+  pinMode(4, OUTPUT); //forward
+  pinMode(5, OUTPUT); //backward
   Serial.begin(9600);
 }
 //------------------------------------------------------------------------------
