@@ -1,7 +1,0 @@
-https://www.arduino.cc/en/Reference/ArduinoBLE
-https://learn.adafruit.com/introduction-to-bluetooth-low-energy/introduction
-https://docs.arduino.cc/hardware/nano-33-ble-sense
-https://www.mauroalfieri.it/elettronica/arduino-nano-33-ble-imu-lsm9ds1.html
-https://support.arduino.cc/hc/en-us/articles/360014654820-Which-are-and-how-to-use-the-NANO-33-BLE-SENSE-built-in-sensors
-https://www.arduino.cc/en/Reference/ArduinoLSM9DS1
-#include <Arduino_LSM9DS1.h>
