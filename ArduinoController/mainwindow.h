@@ -42,6 +42,7 @@ private:
 
 public slots:
     void displayBleDeviceList(QList<QBluetoothDeviceInfo> list_devicesInfos);
+    void allowCalibration(void);
 
 private slots:
     void executestatemachine();
