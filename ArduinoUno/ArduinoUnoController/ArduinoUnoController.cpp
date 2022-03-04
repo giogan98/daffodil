@@ -475,9 +475,9 @@ void checkActivity(void)
 //------------------------------------------------------------------------------
 void setup(void)
 {
-  pinMode(3, OUTPUT); //OK movement button
-  pinMode(4, OUTPUT); //forward
-  pinMode(5, OUTPUT); //backward
+  pinMode(3, OUTPUT); //forward movement
+  pinMode(4, OUTPUT); //backward movement
+  pinMode(5, INPUT);  //pinball sensor
   Serial.begin(9600);
 }
 //------------------------------------------------------------------------------
