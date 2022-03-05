@@ -1,0 +1,23 @@
+Meccanismo più semplice per fare calibrazione del sensore:
+- macchinario con tavolo parallelo al suolo, premo tasto "CALIBRATION" del programma
+- per 5/10s vengono registrati i valori di accelerometro e giroscopio
+- viene fatta la media di questi per ciascun sensore (ovviamente i valori sono divisi per asse x,y,z)
+- uso questa media trovata come offset
+- una volta fatta la calibrazione ho 2 vettori, vAccOffset = {offsetX, offsetY, offsetZ}, vGyroOffset = {offsetX, offsetY, offsetZ}
+
+Meccanismo più semplice per capire se il macchinario è in movimento:
+- dichiaro due vettori per contenere i valori di accelerometro e giroscopio letti vAccValues = {x, y, z}, vGyroValues = {x, y, z}
+- dichiaro due vettori contente il numero di misure di accelerometro e giroscopio vAccMeasures = {n°(x), n°(y), n°(z)}, vGyroMeasures = {n°(x), n°(y), n°(z)}
+- all'inizio del ciclo setto a vettore nullo tutti e 4 i vettori
+- durante il ciclo, leggo i vari valori, faccio il modulo e li sommo nel posto corretto. es. leggo lungo la x una accelerazione di -2.4g, nulla negli altri assi. Il vettore di accelerazione diventa {2.4 , 0 , 0}.
+- ad ogni misura letta aumento il contatore nel vettore adatto.
+- a fine ciclo faccio la media delle misure lette. 
+- se la media è maggiore di un valore soglia (scelto in base al fatto che anche se la macchina non si sta muovendo e ho già tolto l'offset è possibile che del rumore di fondo mi dia un valore diverso da 0) moltiplicato per il numero di misure lette => il macchinario si sta muovendo
+
+
+IL VALORE DI SOGLIA COME SI TROVA?
+acc: non guardare la y
+devo guardare la x e la z e confrontarli con il valore soglia
+
+gyro: cambia solo un dato, devo trovare quale, non la z ma solo x e y 
+dei tre valori confrontati con il valore soglia, solo uno deve essere maggiore
