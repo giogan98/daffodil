@@ -26,8 +26,9 @@ BLEcontroller::BLEcontroller()
     vfGyroscopeOffset = QVector<float>(3, 0);
     viAccelerometerOffsetCounter = QVector<int>(3, 0);
     viGyroscopeOffsetCounter = QVector<int>(3, 0);
-
-    bCalibration = false;
+    bConnected = false;
+    bCalibrationInProgress = false;
+    bCalibrated = false;
 }
 //------------------------------------------------------------------------------
 /**
@@ -308,12 +309,38 @@ void BLEcontroller::serviceStateChanged(QLowEnergyService::ServiceState leServic
     }
 }
 //------------------------------------------------------------------------------
-//@todo simplify this functions ex: int iAxis, switch, etc
-//@todo display "connecting" status until first values are read. After that make
-//      possible to do the calibration of the sensors
+//Quando viene detectata una characteristic change il programma entra qui
+
+//è necessario emittare il segnale che nuova data è avaiable??
+//no, basta fare una funzione che dica tipo bMoving = false o bMoving = true;
+
+
+//ad ogni giro i valori vengono sovrascritti
+
+//offset:
+//acc 0 0 -1
+//gyro 0 0 0
+
+//valori letti con offset:
+//acc 0.5 0.3 0.2
+//gyor 10 20 30
+
+//faccio soglia : acc[0]*100 > 50 -> moving
+
+// problema: il check viene fatto a fine ciclo, quando il macchinario è fermo
+//allora per risolvere faccio così: continuo a contare quanti valori letti,
 void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
     float fValue = QByteArrayToFloat(value);
+
+    static int iOnce = 0;
+    if (iOnce < 1)
+    {
+        iOnce++;
+        bConnected = true;
+        emit calibrationPossible();
+    }
+
     if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X))
     {
         qDebug()<<"ACCX :"<<fValue;
@@ -358,15 +385,21 @@ void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const Q
     }
 }
 //------------------------------------------------------------------------------
+/**
+ * @brief BLEcontroller::startDeviceCalibration
+ * @param iTimer
+ * The calibration has to be executed with the table of the machine parallel to
+ * the ground, at 0 degrees.
+ */
 void BLEcontroller::startDeviceCalibration(int iTimer)
 {
-    bCalibration = true;
+    bCalibrationInProgress = true;
     QTimer::singleShot(iTimer, this, SLOT(finishSensorCalibration()));
 }
 //------------------------------------------------------------------------------
 void BLEcontroller::calibrateSensor(float &fSensorAxisValues, const float &fValue, int &iSensorAxisCounter)
 {
-    if(!bCalibration)
+    if(!bCalibrationInProgress)
         return;
     fSensorAxisValues = fSensorAxisValues + fValue;
     iSensorAxisCounter++;
@@ -374,7 +407,8 @@ void BLEcontroller::calibrateSensor(float &fSensorAxisValues, const float &fValu
 //------------------------------------------------------------------------------
 void BLEcontroller::finishSensorCalibration(void)
 {
-    bCalibration = false;
+    bCalibrationInProgress = false;
+    bCalibrated = true;
     for (int ii = 0; ii < 3; ii++)
     {
         if (viAccelerometerOffsetCounter[ii] != 0)
@@ -391,7 +425,6 @@ void BLEcontroller::finishSensorCalibration(void)
     qDebug()<<"Acc offset: "<<vfAccelerometerOffset;
     qDebug()<<"Gyro :" <<vfGyroscope;
     qDebug()<<"Gyro offset: "<<vfGyroscopeOffset;
-
 }
 //------------------------------------------------------------------------------
 float BLEcontroller::QByteArrayToFloat(const QByteArray &qba)

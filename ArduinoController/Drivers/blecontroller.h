@@ -11,13 +11,18 @@ class BLEcontroller : public QObject
 public:
     QString m_error;
     QString m_info;
+    //Vettori per conservare il valore letto dai sensori:
     QVector<float> vfAccelerometer;
     QVector<float> vfGyroscope;
+    //Vettori per conservare il valore di offset dei sensori:
     QVector<float> vfAccelerometerOffset;
     QVector<float> vfGyroscopeOffset;
+    //Vettori per conservare il numero di misure lette durante la calibrazione:
     QVector<int> viAccelerometerOffsetCounter;
     QVector<int> viGyroscopeOffsetCounter;
-    bool bCalibration;
+    bool bConnected;
+    bool bCalibrationInProgress;
+    bool bCalibrated;
     typedef enum
     {
         AXIS_X = 0,
@@ -68,6 +73,7 @@ signals:
     void deviceListAvaiable(QList<QBluetoothDeviceInfo>);
     void newAccDataAvaiable(float);
     void newGyroDataAvaiable(float);
+    void calibrationPossible(void);
 
 };
 
