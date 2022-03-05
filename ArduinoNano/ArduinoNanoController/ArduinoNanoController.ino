@@ -95,7 +95,7 @@ bool sendSensorsValues(void)
     {
       sendAccelerometerValues();
       sendGyroscopeValues();
-      delay(3000);                  
+      delay(1500);                  
     }
   }  
 }
