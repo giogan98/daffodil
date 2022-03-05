@@ -1155,7 +1155,7 @@ QToolBox::tab:selected {
             <item>
              <widget class="QPushButton" name="pbn_openFile">
               <property name="text">
-               <string>Open Existing File</string>
+               <string>Load Command File</string>
               </property>
              </widget>
             </item>
