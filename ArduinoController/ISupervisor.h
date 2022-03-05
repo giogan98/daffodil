@@ -91,6 +91,7 @@ private:
     void to_error(void);
     void dummyWrite(void);
     bool checkSensor(void);
+    bool checkBleSensor(void);
     void handleNewCycle(void);
     void processSensorOutput(void);
     int randomizeNumber(int iNumber);

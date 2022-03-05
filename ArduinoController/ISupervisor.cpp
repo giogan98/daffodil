@@ -219,12 +219,9 @@ bool ISupervisor::isReady()
     {
         bReady = false;
     }
-    //@TODO
-    //Qui devo controllare che il dispositivo BLE sia connesso ed inizializzato
-    //nel caso in cui venga scelgo il sensore ble
     if (iSettings.load(iSettings.SET_CHECKSENSOR).toInt() == SNS_BLE)
     {
-
+        bReady = (blecontroller->bConnected && blecontroller->bCalibrated);
     }
     return bReady;
 }
@@ -378,19 +375,38 @@ bool ISupervisor::checkSensor(void)
     return true;
 }
 //------------------------------------------------------------------------------
+/**
+ * @brief ISupervisor::checkBleSensor
+ * @return true if movement is detected, false otherwise
+ */
+bool ISupervisor::checkBleSensor(void)
+{
+    //
+    //@todo
+    return true;
+}
+//------------------------------------------------------------------------------
 void ISupervisor::handleNewCycle()
 {
-    if (iWriteDone >= lSzScript)
+    if (iWriteDone >= lSzScript) //start new cycle
     {
-        if (iSettings.load(ISettings::SET_CHECKSENSOR).toBool())
+        if (iSettings.load(ISettings::SET_CHECKSENSOR) == SNS_PINB)
         {
-            bool bSensor = checkSensor();
-            if (!bSensor)
+            if (!checkSensor())
             {
                 aLog.log("ERROR: check sensor: sensor did not move");
-                iSettings.save(ISettings::SET_SENSOR_ERROR,bool(true));
+                iSettings.save(ISettings::SET_SENSOR_ERROR, bool(true));
                 to_idle();
-                // serialcontroller.closeSerialPort(); //do not close or closing window dont turn pins to 0
+                return;
+            }
+        }
+        else if (iSettings.load(ISettings::SET_CHECKSENSOR) == SNS_BLE)
+        {
+            if (!checkBleSensor())
+            {
+                aLog.log("ERROR: check BLE sensor: sensor did not move");
+                iSettings.save(ISettings::SET_SENSOR_ERROR, bool(true));
+                to_idle();
                 return;
             }
         }
