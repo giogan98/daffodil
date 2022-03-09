@@ -312,12 +312,6 @@ void MainWindow::handleGraphicInit(void)
     ui->pbn_startPause->setIcon(QIcon(":/icons/Images/Icons/magnet.png"));
     ui->pbn_startPause->setIconSize(sizeStartButton);
 
-    ui->pbn_advancedSettings->setFixedSize(QSize(50,50));
-    QSize size_advSett_button = ui->pbn_advancedSettings->rect().size();
-
-    ui->pbn_advancedSettings->setIcon(QIcon(":/icons/Images/Icons/settings.png"));
-    ui->pbn_advancedSettings->setIconSize(size_advSett_button);
-
     ui->groupBox_setup->hide();
     ui->groupBox_bleSettings->hide();
     ui->label_filePath->hide();
@@ -418,3 +412,4 @@ void MainWindow::on_pb_calibrateBLE_clicked()
     emit startBleDeviceCalibration(10000);
 }
 //------------------------------------------------------------------------------
+
