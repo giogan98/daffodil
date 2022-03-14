@@ -11,18 +11,21 @@ class BLEcontroller : public QObject
 public:
     QString m_error;
     QString m_info;
-    //Vettori per conservare il valore letto dai sensori:
-    QVector<float> vfAccelerometer;
-    QVector<float> vfGyroscope;
-    //Vettori per conservare il valore di offset dei sensori:
-    QVector<float> vfAccelerometerOffset;
-    QVector<float> vfGyroscopeOffset;
-    //Vettori per conservare il numero di misure lette durante la calibrazione:
+    //Double per conservare il valore dell'accelerometro letto dai sensori:
+    double dAccelerometerX;
+    double dAccelerometerY;
+    double dAccelerometerZ;
+    //Vettore per conservare il valore di offset dell'accelerometro:
+    QVector<double> vdAccelerometerOffset;
+    //Vettore per conservare il numero di misure lette durante la calibrazione:
     QVector<int> viAccelerometerOffsetCounter;
-    QVector<int> viGyroscopeOffsetCounter;
+    //Vettore per il controllo dei gradi del macchinario
+    QVector<double> vdDegrees;
     bool bConnected;
     bool bCalibrationInProgress;
     bool bCalibrated;
+    bool bAccX;
+    bool bAccZ;
     typedef enum
     {
         AXIS_X = 0,
@@ -39,21 +42,19 @@ private:
     QLowEnergyDescriptor leAccNotificationDescX;
     QLowEnergyDescriptor leAccNotificationDescY;
     QLowEnergyDescriptor leAccNotificationDescZ;
-    QLowEnergyDescriptor leGyroNotificationDescX;
-    QLowEnergyDescriptor leGyroNotificationDescY;
-    QLowEnergyDescriptor leGyroNotificationDescZ;
 
 public:
     BLEcontroller();
     void setError(const QString &error);
     void setInfo(const QString &info);
+    void clearDegreeValues(void);
 
 private:
     void initializeBluetoothDeviceDiscoveryAgent(void);
     void connectServicePointer(QLowEnergyService *ptr_service);
     float QByteArrayToFloat(const QByteArray &qba);
     void setDevice(QBluetoothDeviceInfo device);
-    void calibrateSensor(float &fSensorAxisValues, const float &fValue, int &iSensorAxisCounter);
+    void calibrateSensor(double &dSensorAxisValues, const double &dValue, int &iSensorAxisCounter);
 
 public slots:
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);
@@ -66,15 +67,14 @@ public slots:
     void updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value);
     void startDeviceCalibration(int iTimer);
     void finishSensorCalibration(void);
+    void accelerationToDegrees(void);
 
 signals:
     void errorChanged(void);
     void infoChanged(void);
     void deviceListAvaiable(QList<QBluetoothDeviceInfo>);
-    void newAccDataAvaiable(float);
-    void newGyroDataAvaiable(float);
     void calibrationPossible(void);
-
+    void checkAvaiableDegree(void);
 };
 
 #endif // BLECONTROLLER_H

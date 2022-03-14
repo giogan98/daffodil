@@ -5,6 +5,7 @@
 #include "random"
 #include <QObject>
 #include <limits.h>
+#include <QtGlobal>
 
 #define PIN_CHECK_1 10
 #define PIN_CHECKER 1
@@ -381,8 +382,40 @@ bool ISupervisor::checkSensor(void)
  */
 bool ISupervisor::checkBleSensor(void)
 {
-    //
-    //@todo
+    static unsigned long ulCounter = 0;
+    bool bMoving = false;
+    double dMin;
+    double dMax;
+    if (blecontroller->vdDegrees.size() > 0)
+    {
+        dMin = blecontroller->vdDegrees[0];
+        dMax = blecontroller->vdDegrees[0];
+        for (const auto &element : blecontroller->vdDegrees)
+        {
+            if (element < dMin)
+                dMin = element;
+            if (element > dMax)
+                dMax = element;
+        }
+        if (dMin < -80 && dMax > 80) //check fatto ad 80 gradi al posto di 90
+            bMoving = true;
+    }
+    qDebug()<<blecontroller->vdDegrees;
+    blecontroller->clearDegreeValues();
+
+    if (!bMoving)
+    {
+        setSensorError(!bMoving);//bool error
+        if (ulCounter < MAX_CONSEC_ERRORS)
+        {
+            ulCounter++;
+            return true;
+        }
+        ulCounter = 0; //@hint remove to disable reset of error count after restart
+        return false;
+    }
+    setSensorError(!bMoving);
+    ulCounter = 0;
     return true;
 }
 //------------------------------------------------------------------------------
