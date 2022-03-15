@@ -10,6 +10,7 @@
 #define PIN_CHECK_1 10
 #define PIN_CHECKER 1
 #define MAX_CONSEC_ERRORS 15
+#define MAX_BLE_CONSEC_ERRORS 3
 
 ISupervisor iSupervisor = ISupervisor::instance();
 //-----------------------------------------------------------------------------
@@ -406,7 +407,7 @@ bool ISupervisor::checkBleSensor(void)
     if (!bMoving)
     {
         setSensorError(!bMoving);//bool error
-        if (ulCounter < MAX_CONSEC_ERRORS)
+        if (ulCounter < MAX_BLE_CONSEC_ERRORS)
         {
             ulCounter++;
             return true;
