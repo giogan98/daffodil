@@ -223,7 +223,7 @@ bool ISupervisor::isReady()
     }
     if (iSettings.load(iSettings.SET_CHECKSENSOR).toInt() == SNS_BLE)
     {
-        bReady = (blecontroller->bConnected && blecontroller->bCalibrated);
+        bReady = blecontroller->bConnected;
     }
     return bReady;
 }

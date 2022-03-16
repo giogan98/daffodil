@@ -38,10 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, SIGNAL(startBleDeviceSearch()), iSupervisor.blecontroller, SLOT(startDeviceScan()));
     connect(iSupervisor.blecontroller, SIGNAL(deviceListAvaiable(QList<QBluetoothDeviceInfo>)), this, SLOT(displayBleDeviceList(QList<QBluetoothDeviceInfo>)));
     connect(this, SIGNAL(bleDeviceSelected(int)), iSupervisor.blecontroller, SLOT(connectToSelectedDevice(int)));
-    connect(this, SIGNAL(startBleDeviceCalibration(int)), iSupervisor.blecontroller, SLOT(startDeviceCalibration(int)));
-    connect(iSupervisor.blecontroller, SIGNAL(calibrationPossible()), this, SLOT(allowCalibration()));
-    //connect(iSupervisor.blecontroller, SIGNAL(newAccDataAvaiable(float)), this, SLOT(updateAccelerometerData(float)));
-    //connect(iSupervisor.blecontroller, SIGNAL(newGyroDataAvaiable(float)), this, SLOT(updateGyroscopeData(float)));
+    connect(iSupervisor.blecontroller, SIGNAL(connectionCompleted()), this, SLOT(okConnection()));
 }
 //------------------------------------------------------------------------------
 MainWindow::~MainWindow()
@@ -316,8 +313,6 @@ void MainWindow::handleGraphicInit(void)
     ui->groupBox_bleSettings->hide();
     ui->label_filePath->hide();
 
-    ui->pb_calibrateBLE->setEnabled(false);
-
     selectCorrectRadioButtonOnStartup();
 }
 //------------------------------------------------------------------------------
@@ -384,18 +379,6 @@ void MainWindow::displayBleDeviceList(QList<QBluetoothDeviceInfo> list_devicesIn
 }
 //------------------------------------------------------------------------------
 /**
- * @brief MainWindow::allowCalibration
- * when the ble device is connected, allow the button to be pressed to start
- * the calibration
- */
-void MainWindow::allowCalibration(void)
-{
-    QMessageBox::information(this, "Connected", "Device connected");
-    ui->pb_calibrateBLE->setEnabled(true);
-    ui->pb_connectBLE->setText("Connect");
-}
-//------------------------------------------------------------------------------
-/**
  * @brief MainWindow::on_pb_connectBLE_clicked
  * When the user select to which device the program has to connect, this emits
  * a signal to connect to that device
@@ -407,9 +390,9 @@ void MainWindow::on_pb_connectBLE_clicked()
     ui->pb_connectBLE->setText("Connecting...");
 }
 //------------------------------------------------------------------------------
-void MainWindow::on_pb_calibrateBLE_clicked()
+void MainWindow::okConnection(void)
 {
-    emit startBleDeviceCalibration(10000);
+    QMessageBox::information(this, "Connected", "Device connected");
+    ui->pb_connectBLE->setText("Connect");
 }
 //------------------------------------------------------------------------------
-

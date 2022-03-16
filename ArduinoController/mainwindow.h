@@ -42,7 +42,7 @@ private:
 
 public slots:
     void displayBleDeviceList(QList<QBluetoothDeviceInfo> list_devicesInfos);
-    void allowCalibration(void);
+    void okConnection(void);
 
 private slots:
     void executestatemachine();
@@ -60,11 +60,9 @@ private slots:
     void on_rb_BLESensor_clicked();
     void on_pb_searchBLE_clicked();
     void on_pb_connectBLE_clicked();
-    void on_pb_calibrateBLE_clicked();
 
 signals:
     void startBleDeviceSearch(void);
     void bleDeviceSelected(int);
-    void startBleDeviceCalibration(int);
 };
 #endif // MAINWINDOW_H

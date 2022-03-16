@@ -22,8 +22,6 @@ public:
     //Vettore per il controllo dei gradi del macchinario
     QVector<double> vdDegrees;
     bool bConnected;
-    bool bCalibrationInProgress;
-    bool bCalibrated;
     bool bAccX;
     bool bAccZ;
     typedef enum
@@ -54,7 +52,6 @@ private:
     void connectServicePointer(QLowEnergyService *ptr_service);
     float QByteArrayToFloat(const QByteArray &qba);
     void setDevice(QBluetoothDeviceInfo device);
-    void calibrateSensor(double &dSensorAxisValues, const double &dValue, int &iSensorAxisCounter);
 
 public slots:
     void scanError(QBluetoothDeviceDiscoveryAgent::Error error);
@@ -65,16 +62,14 @@ public slots:
     void serviceScanDone(void);
     void serviceStateChanged(QLowEnergyService::ServiceState s);
     void updateSensorsData(const QLowEnergyCharacteristic &c, const QByteArray &value);
-    void startDeviceCalibration(int iTimer);
-    void finishSensorCalibration(void);
     void accelerationToDegrees(void);
 
 signals:
     void errorChanged(void);
     void infoChanged(void);
     void deviceListAvaiable(QList<QBluetoothDeviceInfo>);
-    void calibrationPossible(void);
     void checkAvaiableDegree(void);
+    void connectionCompleted(void);
 };
 
 #endif // BLECONTROLLER_H

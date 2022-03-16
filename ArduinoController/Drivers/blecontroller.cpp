@@ -16,8 +16,6 @@ BLEcontroller::BLEcontroller()
 
     bFoundDataService = false;
     bConnected = false;
-    bCalibrationInProgress = false;
-    bCalibrated = false;
 
     bAccX = false;
     bAccZ = false;
@@ -317,7 +315,7 @@ void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const Q
     {
         iOnce++;
         bConnected = true;
-        emit calibrationPossible();
+        emit connectionCompleted();
     }
 
     if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_X))
@@ -325,12 +323,10 @@ void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const Q
         qDebug()<<"ACCX :"<<dValue;
         dAccelerometerX = dValue;
         bAccX = true;
-        calibrateSensor(vdAccelerometerOffset[AXIS_X], dValue, viAccelerometerOffsetCounter[AXIS_X]);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Y))
     {
         dAccelerometerY = dValue;
-        calibrateSensor(vdAccelerometerOffset[AXIS_Y], dValue, viAccelerometerOffsetCounter[AXIS_Y]);
     }
     else if (c.uuid() == QBluetoothUuid(BLE_UUID_ACCELEROMETER_CHARACTERISTIC_Z))
     {
@@ -339,39 +335,6 @@ void BLEcontroller::updateSensorsData(const QLowEnergyCharacteristic &c, const Q
         bAccZ = true;
     }
     emit checkAvaiableDegree();
-}
-//------------------------------------------------------------------------------
-/**
- * @brief BLEcontroller::startDeviceCalibration
- * @param iTimer
- * The calibration has to be executed with the table of the machine parallel to
- * the ground, at 0 degrees.
- */
-void BLEcontroller::startDeviceCalibration(int iTimer)
-{
-    bCalibrationInProgress = true;
-    QTimer::singleShot(iTimer, this, SLOT(finishSensorCalibration()));
-}
-//------------------------------------------------------------------------------
-void BLEcontroller::calibrateSensor(double &dSensorAxisValues, const double &dValue, int &iSensorAxisCounter)
-{
-    if(!bCalibrationInProgress)
-        return;
-    dSensorAxisValues = dSensorAxisValues + dValue;
-    iSensorAxisCounter++;
-}
-//------------------------------------------------------------------------------
-void BLEcontroller::finishSensorCalibration(void)
-{
-    bCalibrationInProgress = false;
-    bCalibrated = true;
-    for (int ii = 0; ii < 3; ii++)
-    {
-        if (viAccelerometerOffsetCounter[ii] > 0)
-        {
-            vdAccelerometerOffset[ii] = vdAccelerometerOffset[ii] / viAccelerometerOffsetCounter[ii];
-        }
-    }
 }
 //------------------------------------------------------------------------------
 float BLEcontroller::QByteArrayToFloat(const QByteArray &qba)
