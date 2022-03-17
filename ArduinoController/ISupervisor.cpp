@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <QtGlobal>
 
-#define PIN_CHECK_1 10
+#define PIN_CHECK_1 5
 #define PIN_CHECKER 1
 #define MAX_CONSEC_ERRORS 15
 #define MAX_BLE_CONSEC_ERRORS 3
@@ -398,7 +398,7 @@ bool ISupervisor::checkBleSensor(void)
             if (element > dMax)
                 dMax = element;
         }
-        if (dMin < -80 && dMax > 80) //check fatto ad 80 gradi al posto di 90
+        if (dMin < -85 && dMax > 85) //check fatto ad 85 gradi al posto di 90
             bMoving = true;
     }
     qDebug()<<blecontroller->vdDegrees;
